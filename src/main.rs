@@ -229,15 +229,13 @@ fn render_lmp_service_tile(
     proxy_status: &LargeModelProxyStatus,
 ) -> paxhtml::Element {
     paxhtml::html! {
-        <a href={service_status.service_url.clone()} target="_blank" rel="noopener noreferrer"
-           class="block p-4 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg">
-            <div class="flex justify-between items-center mb-2">
-                <span class="font-medium">{service_status.name.clone()}</span>
-                <span class="text-xs text-[var(--color-secondary)]">{service_status.service_url.clone()}</span>
-            </div>
-            <div class="text-xs text-[var(--color-secondary)] mb-3">
-                "Status: " {if service_status.is_running { "Running" } else { "Stopped" }}
-                " | Connections: " {service_status.active_connections.to_string()}
+        <a
+            href={service_status.service_url.clone()} target="_blank" rel="noopener noreferrer"
+            class={format!("block p-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg {}", if service_status.is_running { "bg-[var(--background-color-secondary)]" } else { "bg-[var(--stopped-service-bg)]" })}
+        >
+            <div class="mb-2">
+                <div class="font-mono font-medium text-sm">{service_status.name.clone()}</div>
+                <div class="text-xs text-[var(--color-secondary)] mt-1">{service_status.service_url.clone()}</div>
             </div>
                         {if !service_status.resource_requirements.is_empty() {
                 paxhtml::html! {
@@ -283,6 +281,7 @@ async fn styles(State(state): State<Arc<AppState>>) -> impl IntoResponse {
 --color-secondary: #cccccc;
 --background-color: #3c2954;
 --background-color-secondary: #6f4c9a;
+--stopped-service-bg: #374151;
 }}
 
 /* Fonts */
@@ -298,6 +297,11 @@ async fn styles(State(state): State<Arc<AppState>>) -> impl IntoResponse {
   src: url("/fonts/Literata-Italic.woff2") format("woff2");
   font-weight: normal;
   font-style: italic;
+}}
+
+/* Monospace font fallback */
+font-mono {{
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace;
 }}
 
 {}
