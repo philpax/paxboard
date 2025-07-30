@@ -7,6 +7,7 @@ use axum::{
     response::{Html, IntoResponse},
     routing::get,
 };
+use paxhtml::html;
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
 
@@ -114,7 +115,7 @@ async fn index(State(state): State<Arc<AppState>>) -> impl IntoResponse {
 
     let doc = paxhtml::Document::new([
         paxhtml::builder::doctype(["html".into()]),
-        paxhtml::html! {
+        html! {
             <html lang="en-AU">
                 <head>
                     <title>"paxboard"</title>
@@ -133,9 +134,13 @@ async fn index(State(state): State<Arc<AppState>>) -> impl IntoResponse {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 #{local_services.iter().map(|(name, service)| {
                                     let url = service.get_url(&state.base_url);
-                                    paxhtml::html! {
-                                        <a href={url} target="_blank" rel="noopener noreferrer"
-                                           class="block p-6 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg">
+                                    html! {
+                                        <a
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="block p-6 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                                        >
                                             <div class="text-xl font-semibold mb-2">{name.to_string()}</div>
                                             <div class="text-[var(--color-secondary)] text-sm">{url}</div>
                                         </a>
@@ -162,7 +167,7 @@ fn render_large_model_proxy_section(
 ) -> paxhtml::Element {
     if let Some((name, service)) = large_model_proxy {
         let url = service.get_url(base_url);
-        paxhtml::html! {
+        html! {
             <section>
                 <h2 class="text-2xl font-semibold mb-4 text-center">"ai services"</h2>
                 <div class="space-y-4">
@@ -172,15 +177,17 @@ fn render_large_model_proxy_section(
                         <div class="text-xl font-semibold mb-2">{name.to_string()}</div>
                         <div class="text-[var(--color-secondary)] text-sm mb-4">{url}</div>
                         {if let Some(status) = proxy_status {
-                            paxhtml::html! {
+                            html! {
                                 <div class="text-sm">
                                     <div class="font-medium mb-2">"Total Resources:"</div>
                                     #{status.resources.iter().map(|(resource, resource_status)| {
                                         let percentage = if resource_status.total_available > 0 {
                                             (resource_status.total_in_use as f64 / resource_status.total_available as f64) * 100.0
-                                        } else { 0.0 };
+                                        } else {
+                                            0.0
+                                        };
 
-                                        paxhtml::html! {
+                                        html! {
                                             <div class="text-xs mb-2">
                                                 <div class="flex justify-between mb-1">
                                                     <span>{resource.clone()}</span>
@@ -196,7 +203,7 @@ fn render_large_model_proxy_section(
                                 </div>
                             }
                         } else {
-                            paxhtml::html! {
+                            html! {
                                 <div class="text-sm text-[var(--color-secondary)]">"Status unavailable"</div>
                             }
                         }}
@@ -204,7 +211,7 @@ fn render_large_model_proxy_section(
 
                     // Individual service tiles
                     {if let Some(status) = proxy_status {
-                        paxhtml::html! {
+                        html! {
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 #{status.services.iter().map(|service_status| {
                                     render_lmp_service_tile(service_status, status)
@@ -212,7 +219,7 @@ fn render_large_model_proxy_section(
                             </div>
                         }
                     } else {
-                        paxhtml::html! {
+                        html! {
                             <div class="text-sm text-[var(--color-secondary)] text-center">"Status unavailable"</div>
                         }
                     }}
@@ -220,7 +227,7 @@ fn render_large_model_proxy_section(
             </section>
         }
     } else {
-        paxhtml::html! { <div></div> }
+        html! { <div></div> }
     }
 }
 
@@ -228,7 +235,7 @@ fn render_lmp_service_tile(
     service_status: &LargeModelProxyServiceStatus,
     proxy_status: &LargeModelProxyStatus,
 ) -> paxhtml::Element {
-    paxhtml::html! {
+    html! {
         <a
             href={service_status.service_url.clone()} target="_blank" rel="noopener noreferrer"
             class={format!("block p-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg {}", if service_status.is_running { "bg-[var(--background-color-secondary)]" } else { "bg-[var(--stopped-service-bg)]" })}
@@ -237,14 +244,14 @@ fn render_lmp_service_tile(
                 <div class="font-mono font-medium text-sm">{service_status.name.clone()}</div>
                 <div class="text-xs text-[var(--color-secondary)] mt-1">{service_status.service_url.clone()}</div>
             </div>
-                        {if !service_status.resource_requirements.is_empty() {
-                paxhtml::html! {
+            {if !service_status.resource_requirements.is_empty() {
+                html! {
                     <div class="space-y-1">
                         #{service_status.resource_requirements.keys().map(|resource| {
                             let required = service_status.resource_requirements.get(resource).unwrap_or(&0);
                             let total = proxy_status.resources.get(resource).map(|r| r.total_available).unwrap_or(0);
 
-                            paxhtml::html! {
+                            html! {
                                 <div class="text-xs">
                                     <div class="flex justify-between mb-1">
                                         <span>{resource.clone()}</span>
@@ -252,14 +259,14 @@ fn render_lmp_service_tile(
                                     </div>
                                     {if service_status.is_running {
                                         let percentage = if total > 0 { (*required as f64 / total as f64) * 100.0 } else { 0.0 };
-                                        paxhtml::html! {
+                                        html! {
                                             <div class="w-full bg-black bg-opacity-30 rounded-full h-2 border border-gray-600">
                                                 <div class="bg-green-400 h-2 rounded-full transition-all duration-300" style={format!("width: {}%", percentage)}>
                                                 </div>
                                             </div>
                                         }
                                     } else {
-                                        paxhtml::html! { <div></div> }
+                                        paxhtml::Element::Empty
                                     }}
                                 </div>
                             }
@@ -267,7 +274,7 @@ fn render_lmp_service_tile(
                     </div>
                 }
             } else {
-                paxhtml::html! { <div></div> }
+                paxhtml::Element::Empty
             }}
         </a>
     }
