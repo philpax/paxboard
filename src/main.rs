@@ -124,7 +124,7 @@ async fn index(State(state): State<Arc<AppState>>) -> impl IntoResponse {
                 </head>
                 <body class={format!("max-w-[860px] mx-auto text-[var(--color)] bg-[var(--background-color)] p-4 transition-all duration-200 font-['Literata',serif]")}>
                     <header class="w-full">
-                        <h1 class="text-3xl font-bold mx-auto text-center border-b border-white pb-4 italic">"paxboard"</h1>
+                        <h1 class="text-3xl font-bold mx-auto text-center border-b border-white border-dotted pb-4 italic">"paxboard"</h1>
                     </header>
                     <main class="mt-4 space-y-8">
                         // Local Services Section
