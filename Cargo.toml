@@ -12,4 +12,7 @@ toml = "0.9.4"
 paxhtml = { git = "https://github.com/philpax/paxhtml.git" }
 paxhtml_tailwind = { git = "https://github.com/philpax/paxhtml.git" }
 tower-http = { version = "0.6.6", features = ["fs"] }
-reqwest = { version = "0.12.22", features = ["json"] }
+reqwest = { version = "0.12.22", features = [
+    "json",
+    "rustls-tls",
+], default-features = false }
