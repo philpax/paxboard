@@ -1,0 +1,6 @@
+[submodule "vendor/inspect.lua"]
+	path = vendor/inspect.lua
+	url = https://github.com/kikito/inspect.lua.git
+[submodule "vendor/luafun"]
+	path = vendor/luafun
+	url = https://github.com/luafun/luafun.git

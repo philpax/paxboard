@@ -1,51 +1,24 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::sync::Arc;
 
 use axum::{
     Router,
     extract::State,
-    http::header,
-    response::{Html, IntoResponse},
+    http::{StatusCode, header},
+    response::{Html, IntoResponse, Response},
     routing::get,
 };
-use paxhtml::html;
+use mlua::LuaSerdeExt as _;
 use serde::{Deserialize, Serialize};
 use tower_http::services::ServeDir;
-
-mod large_model_proxy;
-use large_model_proxy::{LargeModelProxy, LargeModelProxyServiceStatus, LargeModelProxyStatus};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Config {
     port: u16,
-    base_url: String,
-}
-
-#[derive(Debug, Clone)]
-enum Service {
-    Local { port: u16 },
-    LargeModelProxy(LargeModelProxy),
-}
-impl Service {
-    pub const fn local(port: u16) -> Self {
-        Self::Local { port }
-    }
-    pub fn large_model_proxy(url: String) -> Self {
-        Self::LargeModelProxy(LargeModelProxy::new(url))
-    }
-
-    pub fn get_url(&self, base_url: &str) -> String {
-        match self {
-            Service::Local { port } => format!("{base_url}:{port}/"),
-            Service::LargeModelProxy(proxy) => proxy.get_url().to_string(),
-        }
-    }
 }
 
 #[derive(Debug)]
 struct AppState {
     tailwind_css: String,
-    base_url: String,
-    services: BTreeMap<&'static str, Service>,
 }
 
 #[tokio::main]
@@ -58,25 +31,10 @@ async fn main() -> anyhow::Result<()> {
         "src/tailwind.css",
     )?;
 
-    let services = BTreeMap::from([
-        ("plex", Service::local(32400)),
-        ("jellyfin", Service::local(8096)),
-        ("navidrome", Service::local(4533)),
-        ("redlib", Service::local(10000)),
-        (
-            "large-model-proxy",
-            Service::large_model_proxy("http://redline:7071".to_string()),
-        ),
-    ]);
-
     let app = Router::new()
         .route("/", get(index))
         .route("/styles.css", get(styles))
-        .with_state(Arc::new(AppState {
-            tailwind_css,
-            base_url: config.base_url,
-            services,
-        }))
+        .with_state(Arc::new(AppState { tailwind_css }))
         .fallback_service(ServeDir::new("static"));
 
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", config.port))
@@ -88,196 +46,48 @@ async fn main() -> anyhow::Result<()> {
     Ok(axum::serve(listener, app).await?)
 }
 
-async fn index(State(state): State<Arc<AppState>>) -> impl IntoResponse {
-    let services = &state.services;
-
-    // Separate local services from large model proxy
-    let mut local_services = Vec::new();
-    let mut large_model_proxy = None;
-
-    for (name, service) in services {
-        match service {
-            Service::Local { .. } => {
-                local_services.push((*name, service));
-            }
-            Service::LargeModelProxy(_) => {
-                large_model_proxy = Some((*name, service));
-            }
-        }
-    }
-
-    // Get large model proxy status if available
-    let proxy_status = if let Some((_, Service::LargeModelProxy(proxy))) = large_model_proxy {
-        proxy.get_status().await.ok()
-    } else {
-        None
-    };
-
-    let doc = paxhtml::Document::new([
-        paxhtml::builder::doctype(["html".into()]),
-        html! {
-            <html lang="en-AU">
-                <head>
-                    <title>"paxboard"</title>
-                    <meta charset="utf-8" />
-                    <meta name="viewport" content="width=device-width, initial-scale=1" />
-                    <link rel="stylesheet" href="/styles.css" />
-                </head>
-                <body class={format!("max-w-[860px] mx-auto text-[var(--color)] bg-[var(--background-color)] p-4 transition-all duration-200 font-['Literata',serif]")}>
-                    <header class="w-full">
-                        <h1 class="text-3xl font-bold mx-auto text-center border-b border-white border-dotted pb-4 italic">"paxboard"</h1>
-                    </header>
-                    <main class="mt-4 space-y-8">
-                        // Local Services Section
-                        <section>
-                            <h2 class="text-2xl font-semibold mb-4 text-center">"local services"</h2>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                #{local_services.iter().map(|(name, service)| {
-                                    let url = service.get_url(&state.base_url);
-                                    html! {
-                                        <a
-                                            href={url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            class="block p-6 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
-                                        >
-                                            <div class="text-xl font-semibold mb-2">{name.to_string()}</div>
-                                            <div class="text-[var(--color-secondary)] text-sm">{url}</div>
-                                        </a>
-                                    }
-                                })}
-                            </div>
-                        </section>
-
-                        // Large Model Proxy Section
-                        {render_large_model_proxy_section(large_model_proxy, &proxy_status, &state.base_url)}
-                    </main>
-                </body>
-            </html>
-        },
-    ]);
-
-    Html(doc.write_to_string().unwrap())
+async fn index() -> AppResult<Html<String>> {
+    render_lua_page("pages/index.lua").await
 }
 
-fn render_large_model_proxy_section(
-    large_model_proxy: Option<(&'static str, &Service)>,
-    proxy_status: &Option<LargeModelProxyStatus>,
-    base_url: &str,
-) -> paxhtml::Element {
-    if let Some((name, service)) = large_model_proxy {
-        let url = service.get_url(base_url);
-        html! {
-            <section>
-                <h2 class="text-2xl font-semibold mb-4 text-center">"ai services"</h2>
-                <div class="space-y-4">
-                    // Main LMP tile
-                    <a href={url.clone()} target="_blank" rel="noopener noreferrer"
-                       class="block p-6 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg">
-                        <div class="text-xl font-semibold mb-2">{name.to_string()}</div>
-                        <div class="text-[var(--color-secondary)] text-sm mb-4">{url}</div>
-                        {if let Some(status) = proxy_status {
-                            html! {
-                                <div class="text-sm">
-                                    <div class="font-medium mb-2">"Total Resources:"</div>
-                                    #{status.resources.iter().map(|(resource, resource_status)| {
-                                        let percentage = if resource_status.total_available > 0 {
-                                            (resource_status.total_in_use as f64 / resource_status.total_available as f64) * 100.0
-                                        } else {
-                                            0.0
-                                        };
+async fn render_lua_page(path: &str) -> AppResult<Html<String>> {
+    let lua = mlua::Lua::new();
+    lua.globals().set(
+        "inspect",
+        lua.load(include_str!("../vendor/inspect.lua/inspect.lua"))
+            .eval::<mlua::Value>()?,
+    )?;
+    lua.load(include_str!("../vendor/luafun/fun.lua"))
+        .eval::<mlua::Table>()?
+        .for_each(|k: mlua::Value, v: mlua::Value| lua.globals().set(k, v))?;
+    lua.globals().set(
+        "fetch_json",
+        lua.create_async_function(move |lua, url: String| async move {
+            let client = reqwest::Client::new();
+            let response =
+                client.get(url).send().await.map_err(|e| {
+                    mlua::Error::RuntimeError(format!("Failed to fetch JSON: {}", e))
+                })?;
+            let json: serde_json::Value = response
+                .json()
+                .await
+                .map_err(|e| mlua::Error::RuntimeError(format!("Failed to parse JSON: {}", e)))?;
+            lua.to_value_with(
+                &json,
+                mlua::SerializeOptions::new().set_array_metatable(false),
+            )
+        })?,
+    )?;
+    paxhtml_mlua::register(&lua)?;
 
-                                        html! {
-                                            <div class="text-xs mb-2">
-                                                <div class="flex justify-between mb-1">
-                                                    <span>{resource.clone()}</span>
-                                                    <span>{format!("{}/{}", resource_status.total_in_use, resource_status.total_available)}</span>
-                                                </div>
-                                                <div class="w-full bg-black bg-opacity-30 rounded-full h-2 border border-gray-600">
-                                                    <div class="bg-blue-400 h-2 rounded-full transition-all duration-300" style={format!("width: {}%", percentage)}>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
-                                    })}
-                                </div>
-                            }
-                        } else {
-                            html! {
-                                <div class="text-sm text-[var(--color-secondary)]">"Status unavailable"</div>
-                            }
-                        }}
-                    </a>
-
-                    // Individual service tiles
-                    {if let Some(status) = proxy_status {
-                        html! {
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                #{status.services.iter().map(|service_status| {
-                                    render_lmp_service_tile(service_status, status)
-                                })}
-                            </div>
-                        }
-                    } else {
-                        html! {
-                            <div class="text-sm text-[var(--color-secondary)] text-center">"Status unavailable"</div>
-                        }
-                    }}
-                </div>
-            </section>
-        }
-    } else {
-        html! { <div></div> }
-    }
-}
-
-fn render_lmp_service_tile(
-    service_status: &LargeModelProxyServiceStatus,
-    proxy_status: &LargeModelProxyStatus,
-) -> paxhtml::Element {
-    html! {
-        <a
-            href={service_status.service_url.clone()} target="_blank" rel="noopener noreferrer"
-            class={format!("block p-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg {}", if service_status.is_running { "bg-[var(--background-color-secondary)]" } else { "bg-[var(--stopped-service-bg)]" })}
-        >
-            <div class="mb-2">
-                <div class="font-mono font-medium text-sm">{service_status.name.clone()}</div>
-                <div class="text-xs text-[var(--color-secondary)] mt-1">{service_status.service_url.clone()}</div>
-            </div>
-            {if !service_status.resource_requirements.is_empty() {
-                html! {
-                    <div class="space-y-1">
-                        #{service_status.resource_requirements.keys().map(|resource| {
-                            let required = service_status.resource_requirements.get(resource).unwrap_or(&0);
-                            let total = proxy_status.resources.get(resource).map(|r| r.total_available).unwrap_or(0);
-
-                            html! {
-                                <div class="text-xs">
-                                    <div class="flex justify-between mb-1">
-                                        <span>{resource.clone()}</span>
-                                        <span>{format!("{}/{}", required, total)}</span>
-                                    </div>
-                                    {if service_status.is_running {
-                                        let percentage = if total > 0 { (*required as f64 / total as f64) * 100.0 } else { 0.0 };
-                                        html! {
-                                            <div class="w-full bg-black bg-opacity-30 rounded-full h-2 border border-gray-600">
-                                                <div class="bg-green-400 h-2 rounded-full transition-all duration-300" style={format!("width: {}%", percentage)}>
-                                                </div>
-                                            </div>
-                                        }
-                                    } else {
-                                        paxhtml::Element::Empty
-                                    }}
-                                </div>
-                            }
-                        })}
-                    </div>
-                }
-            } else {
-                paxhtml::Element::Empty
-            }}
-        </a>
-    }
+    let chunk = lua.load(tokio::fs::read_to_string(path).await?);
+    Ok(Html(
+        paxhtml::Document::new([
+            paxhtml::builder::doctype(["html".into()]),
+            lua.from_value(chunk.eval_async::<mlua::Value>().await?)?,
+        ])
+        .write_to_string()?,
+    ))
 }
 
 async fn styles(State(state): State<Arc<AppState>>) -> impl IntoResponse {
@@ -319,4 +129,29 @@ font-mono {{
     .to_string();
 
     ([(header::CONTENT_TYPE, "text/css")], css)
+}
+
+struct AppError(anyhow::Error);
+type AppResult<T> = Result<T, AppError>;
+
+// Tell axum how to convert `AppError` into a response.
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Something went wrong: {}", self.0),
+        )
+            .into_response()
+    }
+}
+
+// This enables using `?` on functions that return `Result<_, anyhow::Error>` to turn them into
+// `Result<_, AppError>`. That way you don't need to do that manually.
+impl<E> From<E> for AppError
+where
+    E: Into<anyhow::Error>,
+{
+    fn from(err: E) -> Self {
+        Self(err.into())
+    }
 }
