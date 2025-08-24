@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{path::Path, sync::Arc};
 
 use axum::{
     Router,
@@ -25,11 +25,9 @@ struct AppState {
 async fn main() -> anyhow::Result<()> {
     let config = toml::from_str::<Config>(&std::fs::read_to_string("config.toml")?)?;
 
-    let tailwind_css = paxhtml_tailwind::download_and_run(
-        paxhtml_tailwind::RECOMMENDED_VERSION,
-        true,
-        "src/tailwind.css",
-    )?;
+    let tailwind_css =
+        paxhtml_tailwind::Tailwind::download(paxhtml_tailwind::RECOMMENDED_VERSION, true)?
+            .generate_from_file(Path::new("src/tailwind.css"))?;
 
     let app = Router::new()
         .route("/", get(index))

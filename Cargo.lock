@@ -208,7 +208,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "778e2ac28f6c47af28e4907f13ffd1e1ddbd400980a9abd7c8df189bf578a5ad"
 dependencies = [
  "libc",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
@@ -803,7 +803,7 @@ dependencies = [
 [[package]]
 name = "paxhtml"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#9862c9209afb813cd1ad369bef3593a53d125c22"
+source = "git+https://github.com/philpax/paxhtml.git#47fbf46399840049d89dff017f4759cc6ada9c0d"
 dependencies = [
  "html-escape",
  "paxhtml_macro",
@@ -813,7 +813,7 @@ dependencies = [
 [[package]]
 name = "paxhtml_macro"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#9862c9209afb813cd1ad369bef3593a53d125c22"
+source = "git+https://github.com/philpax/paxhtml.git#47fbf46399840049d89dff017f4759cc6ada9c0d"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -824,7 +824,7 @@ dependencies = [
 [[package]]
 name = "paxhtml_mlua"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#9862c9209afb813cd1ad369bef3593a53d125c22"
+source = "git+https://github.com/philpax/paxhtml.git#47fbf46399840049d89dff017f4759cc6ada9c0d"
 dependencies = [
  "mlua",
  "paxhtml",
@@ -833,7 +833,7 @@ dependencies = [
 [[package]]
 name = "paxhtml_tailwind"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#9862c9209afb813cd1ad369bef3593a53d125c22"
+source = "git+https://github.com/philpax/paxhtml.git#47fbf46399840049d89dff017f4759cc6ada9c0d"
 
 [[package]]
 name = "percent-encoding"
@@ -1068,7 +1068,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys",
- "windows-sys 0.52.0",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]
