@@ -1,4 +1,7 @@
-use std::{path::Path, sync::Arc};
+use std::{
+    path::{Path, PathBuf},
+    sync::Arc,
+};
 
 use axum::{
     Router,
@@ -18,16 +21,46 @@ struct Config {
 
 #[derive(Debug)]
 struct AppState {
-    tailwind_css: String,
+    tailwind_css: GeneratedTailwind,
+}
+
+#[derive(Debug)]
+enum GeneratedTailwind {
+    Generated(String),
+    Watch {
+        path: PathBuf,
+        _child: std::process::Child,
+    },
+}
+impl GeneratedTailwind {
+    pub async fn read(&self) -> anyhow::Result<String> {
+        match self {
+            GeneratedTailwind::Generated(css) => Ok(css.clone()),
+            GeneratedTailwind::Watch { path, .. } => Ok(tokio::fs::read_to_string(path).await?),
+        }
+    }
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let config = toml::from_str::<Config>(&std::fs::read_to_string("config.toml")?)?;
 
-    let tailwind_css =
-        paxhtml_tailwind::Tailwind::download(paxhtml_tailwind::RECOMMENDED_VERSION, true)?
-            .generate_from_file(Path::new("src/tailwind.css"))?;
+    // if non-release build, watch for changes to tailwind.css
+    let tailwind_input_css = Path::new("src/tailwind.css");
+    let tailwind =
+        paxhtml_tailwind::Tailwind::download(paxhtml_tailwind::RECOMMENDED_VERSION, true)?;
+    let tailwind_css = if cfg!(debug_assertions) {
+        let tailwind_output_css = Path::new("target/tailwind.css");
+        let tailwind_watch = tailwind
+            .watch(tailwind_input_css, tailwind_output_css)?
+            .spawn()?;
+        GeneratedTailwind::Watch {
+            path: tailwind_output_css.to_path_buf(),
+            _child: tailwind_watch,
+        }
+    } else {
+        GeneratedTailwind::Generated(tailwind.generate_from_file(tailwind_input_css)?)
+    };
 
     let app = Router::new()
         .route("/", get(index))
@@ -88,7 +121,7 @@ async fn render_lua_page(path: &str) -> AppResult<Html<String>> {
     ))
 }
 
-async fn styles(State(state): State<Arc<AppState>>) -> impl IntoResponse {
+async fn styles(State(state): State<Arc<AppState>>) -> AppResult<impl IntoResponse> {
     let css = format!(
         r#"
 :root {{
@@ -121,12 +154,12 @@ font-mono {{
 
 {}
 "#,
-        state.tailwind_css
+        state.tailwind_css.read().await?
     )
     .trim()
     .to_string();
 
-    ([(header::CONTENT_TYPE, "text/css")], css)
+    Ok(([(header::CONTENT_TYPE, "text/css")], css))
 }
 
 struct AppError(anyhow::Error);
