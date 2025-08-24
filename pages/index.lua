@@ -29,17 +29,17 @@ function render()
             main { class = "mt-4 space-y-8" } {
                 -- Local Services Section
                 section {} {
-                    h2 { class="text-2xl font-semibold mb-4 text-center" } { "local services" },
-                    div { class="grid grid-cols-1 md:grid-cols-2 gap-4" } {
+                    h2 { class="text-2xl font-semibold mb-2 text-center" } { "local services" },
+                    div { class="grid grid-cols-1 md:grid-cols-2 gap-2" } {
                         iter(local_services):map(function(service)
                             local url = service.url
                             return a {
                                 href=url,
                                 target="_blank",
                                 rel="noopener noreferrer",
-                                class="block p-6 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                                class="block p-4 bg-[var(--background-color-secondary)] hover:brightness-125 transition-all duration-200 transform shadow-lg"
                             } {
-                                div { class="text-xl font-semibold mb-2" } { service.name },
+                                div { class="text-xl font-semibold" } { service.name },
                                 div { class="text-[var(--color-secondary)] text-sm" } { url }
                             }
                         end):totable()
@@ -61,18 +61,18 @@ function render_large_model_proxy_section()
     local proxy_status = fetch_json(lmp.service_url.."/status")
 
     return section {} {
-        h2 { class="text-2xl font-semibold mb-4 text-center" } { "ai services" },
-        div { class="space-y-4" } {
+        h2 { class="text-2xl font-semibold mb-2 text-center" } { "ai services" },
+        div { } {
             -- Main LMP tile
             a {
                 href=url, target="_blank", rel="noopener noreferrer",
-                class="block p-6 bg-[var(--background-color-secondary)] rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg"
+                class="block p-4 bg-[var(--background-color-secondary)] hover:brightness-125 transition-all duration-200 transform shadow-lg mb-2"
             } {
-                div { class="text-xl font-semibold mb-2" } { name },
-                div { class="text-[var(--color-secondary)] text-sm mb-4" } { url },
+                div { class="text-xl font-semibold" } { name },
+                div { class="text-[var(--color-secondary)] text-sm mb-2" } { url },
                 proxy_status and (
                     div { class="text-sm" } {
-                        div { class="font-medium mb-2" } { "Total Resources:" },
+                        div { class="italic mb-1" } { "Total Resources:" },
                         iter(proxy_status.resources):map(function(resource, resource_status)
                             local percentage = resource_status.total_available > 0 and
                                 (resource_status.total_in_use / resource_status.total_available) * 100 or 0
@@ -98,7 +98,7 @@ function render_large_model_proxy_section()
 
             -- Individual service tiles
             proxy_status and (
-                div { class="grid grid-cols-1 md:grid-cols-2 gap-4" } {
+                div { class="grid grid-cols-1 md:grid-cols-2 gap-2" } {
                     iter(proxy_status.services):map(function(service_status)
                         return render_lmp_service_tile(service_status, proxy_status)
                     end):totable()
@@ -115,11 +115,11 @@ function render_lmp_service_tile(service_status, proxy_status)
     local is_running_style = service_status.is_running and "bg-[var(--background-color-secondary)]" or "bg-[var(--stopped-service-bg)]"
     return a {
         href=service_status.service_url, target="_blank", rel="noopener noreferrer",
-        class=string.format("block p-4 rounded-lg hover:bg-opacity-80 transition-all duration-200 transform hover:scale-[1.02] shadow-lg %s", is_running_style)
+        class=string.format("block p-4 hover:brightness-125 transition-all duration-200 transform shadow-lg %s", is_running_style)
     } {
         div { class="mb-2" } {
             div { class="font-mono font-medium text-sm" } { service_status.name },
-            div { class="text-xs text-[var(--color-secondary)] mt-1" } { service_status.service_url },
+            div { class="text-xs text-[var(--color-secondary)]" } { service_status.service_url },
         },
         div { class="space-y-1" } {
             iter(service_status.resource_requirements):map(function(resource, required)
