@@ -86,9 +86,11 @@ async fn render_lua_page(path: &str) -> AppResult<Html<String>> {
     lua.globals().set(
         "inspect",
         lua.load(include_str!("../vendor/inspect.lua/inspect.lua"))
+            .set_name("@inspect.lua")
             .eval::<mlua::Value>()?,
     )?;
     lua.load(include_str!("../vendor/luafun/fun.lua"))
+        .set_name("@fun.lua")
         .eval::<mlua::Table>()?
         .for_each(|k: mlua::Value, v: mlua::Value| lua.globals().set(k, v))?;
     lua.globals().set(
@@ -111,7 +113,9 @@ async fn render_lua_page(path: &str) -> AppResult<Html<String>> {
     )?;
     paxhtml_mlua::register(&lua)?;
 
-    let chunk = lua.load(tokio::fs::read_to_string(path).await?);
+    let chunk = lua
+        .load(tokio::fs::read_to_string(path).await?)
+        .set_name(format!("@{path}"));
     Ok(Html(
         paxhtml::Document::new([
             paxhtml::builder::doctype(["html".into()]),
