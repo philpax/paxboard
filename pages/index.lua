@@ -68,6 +68,12 @@ local function large_model_proxy()
 	local function service_tile(service_status)
 		local is_running_style = service_status.is_running and "bg-[var(--background-color-secondary)]"
 			or "bg-[var(--stopped-service-bg)]"
+
+		local service_requirements = f.to_pairs(service_status.resource_requirements)
+		table.sort(service_requirements, function(a, b)
+			return a[1] < b[1]
+		end)
+
 		return h.a {
 			href = service_status.service_url,
 			target = "_blank",
@@ -82,7 +88,7 @@ local function large_model_proxy()
 				h.div { class = "text-xs text-[var(--color-secondary)]" } { service_status.service_url },
 			},
 			h.div { class = "space-y-1" } {
-				f.map(f.to_pairs(service_status.resource_requirements), function(pair)
+				f.map(service_requirements, function(pair)
 					local resource = pair[1]
 					local required = pair[2]
 					local total = (proxy_status.resources[resource] or {}).total_available or 0
