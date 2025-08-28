@@ -803,7 +803,7 @@ dependencies = [
 [[package]]
 name = "paxhtml"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#3f76af60f7be2d2430c23c14d84040b8afd701cb"
+source = "git+https://github.com/philpax/paxhtml.git#6ce6291b4e22de2011937088dd2ee17a56aabcfa"
 dependencies = [
  "html-escape",
  "paxhtml_macro",
@@ -813,7 +813,7 @@ dependencies = [
 [[package]]
 name = "paxhtml_macro"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#3f76af60f7be2d2430c23c14d84040b8afd701cb"
+source = "git+https://github.com/philpax/paxhtml.git#6ce6291b4e22de2011937088dd2ee17a56aabcfa"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -824,7 +824,7 @@ dependencies = [
 [[package]]
 name = "paxhtml_mlua"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#3f76af60f7be2d2430c23c14d84040b8afd701cb"
+source = "git+https://github.com/philpax/paxhtml.git#6ce6291b4e22de2011937088dd2ee17a56aabcfa"
 dependencies = [
  "mlua",
  "paxhtml",
@@ -833,7 +833,7 @@ dependencies = [
 [[package]]
 name = "paxhtml_tailwind"
 version = "0.1.0"
-source = "git+https://github.com/philpax/paxhtml.git#3f76af60f7be2d2430c23c14d84040b8afd701cb"
+source = "git+https://github.com/philpax/paxhtml.git#6ce6291b4e22de2011937088dd2ee17a56aabcfa"
 
 [[package]]
 name = "percent-encoding"
