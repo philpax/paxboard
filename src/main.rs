@@ -89,10 +89,9 @@ async fn render_lua_page(path: &str) -> AppResult<Html<String>> {
             .set_name("@inspect.lua")
             .eval::<mlua::Value>()?,
     )?;
-    lua.load(include_str!("../vendor/luafun/fun.lua"))
-        .set_name("@fun.lua")
-        .eval::<mlua::Table>()?
-        .for_each(|k: mlua::Value, v: mlua::Value| lua.globals().set(k, v))?;
+    lua.load(include_str!("../vendor/functional.lua"))
+        .set_name("@functional.lua")
+        .eval::<()>()?;
     lua.globals().set(
         "fetch_json",
         lua.create_async_function(move |lua, url: String| async move {

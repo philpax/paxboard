@@ -11,7 +11,7 @@ local function local_services()
 	return h.section {} {
 		h.h2 { class = "text-2xl font-semibold mb-2 text-center" } { "local services" },
 		h.div { class = "grid grid-cols-1 md:grid-cols-2 gap-2" } {
-			iter(services):map(function(service)
+			f.map(services, function(service)
 				local url = service.url
 				return h.a {
 					href = url,
@@ -22,7 +22,7 @@ local function local_services()
 					h.div { class = "text-xl font-semibold" } { service.name },
 					h.div { class = "text-[var(--color-secondary)] text-sm" } { url },
 				}
-			end):totable(),
+			end),
 		},
 	}
 end
@@ -42,7 +42,7 @@ local function large_model_proxy()
 	local function main_tile()
 		return h.div { class = "text-sm" } {
 			h.div { class = "italic mb-1" } { "Total Resources:" },
-			iter(proxy_status.resources):map(function(resource, resource_status)
+			f.map(proxy_status.resources, function(resource, resource_status)
 				local percentage = resource_status.total_available > 0
 						and (resource_status.total_in_use / resource_status.total_available) * 100
 					or 0
@@ -61,7 +61,7 @@ local function large_model_proxy()
 						} {},
 					},
 				}
-			end):totable(),
+			end),
 		}
 	end
 
@@ -82,7 +82,9 @@ local function large_model_proxy()
 				h.div { class = "text-xs text-[var(--color-secondary)]" } { service_status.service_url },
 			},
 			h.div { class = "space-y-1" } {
-				iter(service_status.resource_requirements):map(function(resource, required)
+				f.map(f.to_pairs(service_status.resource_requirements), function(pair)
+					local resource = pair[1]
+					local required = pair[2]
 					local total = (proxy_status.resources[resource] or {}).total_available or 0
 
 					return h.div { class = "text-xs" } {
@@ -99,7 +101,7 @@ local function large_model_proxy()
 							},
 						}) or h.empty(),
 					}
-				end):totable(),
+				end),
 			},
 		}
 	end
@@ -121,9 +123,9 @@ local function large_model_proxy()
 
 			-- Individual service tiles
 			h.div { class = "grid grid-cols-1 md:grid-cols-2 gap-2" } {
-				iter(proxy_status.services):map(function(service_status)
+				f.map(proxy_status.services, function(service_status)
 					return service_tile(service_status)
-				end):totable(),
+				end),
 			},
 		},
 	}
