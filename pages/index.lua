@@ -1,5 +1,26 @@
 base_url = "http://redline"
 
+local function layout(body)
+	return h.html { lang = "en-AU" } {
+		h.head {} {
+			h.title {} "paxboard",
+			h.meta { charset = "utf-8" },
+			h.meta { name = "viewport", content = "width=device-width, initial-scale=1" },
+			h.link { rel = "stylesheet", href = "/styles.css" },
+		},
+		h.body {
+			class = "max-w-[860px] mx-auto text-[var(--color)] bg-[var(--background-color)] p-4 transition-all duration-200 font-['Literata',serif]",
+		} {
+			h.header { class = "w-full" } {
+				h.h1 { class = "text-3xl font-bold mx-auto text-center border-b border-white border-dotted pb-4 italic" } {
+					"paxboard",
+				},
+			},
+			h.main({ class = "mt-4 space-y-8" })(body),
+		},
+	}
+end
+
 local function local_services()
 	local services = {
 		{ name = "jellyfin", url = base_url .. ":8096" },
@@ -143,24 +164,7 @@ local function large_model_proxy()
 	}
 end
 
-return h.html { lang = "en-AU" } {
-	h.head {} {
-		h.title {} "paxboard",
-		h.meta { charset = "utf-8" },
-		h.meta { name = "viewport", content = "width=device-width, initial-scale=1" },
-		h.link { rel = "stylesheet", href = "/styles.css" },
-	},
-	h.body {
-		class = "max-w-[860px] mx-auto text-[var(--color)] bg-[var(--background-color)] p-4 transition-all duration-200 font-['Literata',serif]",
-	} {
-		h.header { class = "w-full" } {
-			h.h1 { class = "text-3xl font-bold mx-auto text-center border-b border-white border-dotted pb-4 italic" } {
-				"paxboard",
-			},
-		},
-		h.main { class = "mt-4 space-y-8" } {
-			local_services(),
-			large_model_proxy(),
-		},
-	},
+return layout {
+	local_services(),
+	large_model_proxy(),
 }
