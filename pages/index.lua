@@ -39,10 +39,18 @@ local function large_model_proxy()
 		return h.div { class = "text-sm text-[var(--color-secondary)] text-center" } { "Status unavailable" }
 	end
 
+	local resources = f.to_pairs(proxy_status.resources)
+	table.sort(resources, function(a, b)
+		return a[1] < b[1]
+	end)
+
 	local function main_tile()
 		return h.div { class = "text-sm" } {
 			h.div { class = "italic mb-1" } { "Total Resources:" },
-			f.map(proxy_status.resources, function(resource, resource_status)
+			f.map(resources, function(resource_pair)
+				local resource = resource_pair[1]
+				local resource_status = resource_pair[2]
+
 				local percentage = resource_status.total_available > 0
 						and (resource_status.total_in_use / resource_status.total_available) * 100
 					or 0
@@ -129,9 +137,7 @@ local function large_model_proxy()
 
 			-- Individual service tiles
 			h.div { class = "grid grid-cols-1 md:grid-cols-2 gap-2" } {
-				f.map(proxy_status.services, function(service_status)
-					return service_tile(service_status)
-				end),
+				f.map(proxy_status.services, service_tile),
 			},
 		},
 	}
