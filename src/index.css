@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@font-face {
+  font-family: "Literata";
+  src: url("/fonts/Literata.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Literata";
+  src: url("/fonts/Literata-Italic.woff2") format("woff2");
+  font-weight: 400;
+  font-style: italic;
+}
+
+@theme {
+  --color-primary: #ffffff;
+  --color-secondary: #cccccc;
+  --color-bg: #3c2954;
+  --color-bg-secondary: #6f4c9a;
+  --color-stopped: #374151;
+}
+
+body {
+  margin: 0;
+  font-family: "Literata", serif;
+  background-color: var(--color-bg);
+  color: var(--color-primary);
+}
