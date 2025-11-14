@@ -13,23 +13,6 @@ There is no reason for you to use this.
 - Vite
 - Tailwind CSS 4
 
-## Configuration
-
-Copy `.env.example` to `.env` and customize:
-
-```bash
-cp .env.example .env
-```
-
-Set `VITE_BASE_URL` to your server's base URL (default: `http://redline`).
-
-## Development
-
-```bash
-npm install
-npm run dev
-```
-
 ## Build
 
 ```bash
