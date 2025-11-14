@@ -12,7 +12,7 @@ export function ServiceTile({
     : "bg-[var(--color-stopped)]";
 
   const resourceEntries = Object.entries(service.resource_requirements).sort(
-    ([a], [b]) => a.localeCompare(b)
+    ([a], [b]) => a.localeCompare(b),
   );
 
   return (
