@@ -32,7 +32,7 @@ function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
   const hourAngle = ((hours % 12) * 30 + minutes * 0.5) - 90; // 30 degrees per hour
 
   return (
-    <svg viewBox="0 0 100 100" className="w-32 h-32">
+    <svg viewBox="0 0 100 100" className="w-24 h-24">
       {/* Clock face */}
       <circle
         cx="50"
@@ -134,17 +134,17 @@ export function WorldClocks() {
   return (
     <section>
       <h2 className="text-2xl font-semibold mb-2 text-center">world clocks</h2>
-      <div className="flex justify-between gap-2 overflow-x-auto">
+      <div className="flex justify-between gap-1">
         {clocks.map((clock) => (
           <div
             key={clock.timezone}
-            className="bg-[var(--color-bg-secondary)] rounded-lg p-4 hover:brightness-125 transition-all duration-200 flex-shrink-0 flex flex-col items-center min-w-[160px]"
+            className="bg-[var(--color-bg-secondary)] rounded-lg p-2 hover:brightness-125 transition-all duration-200 flex-shrink-0 flex flex-col items-center"
           >
-            <div className="text-lg font-semibold mb-2 text-center">
+            <div className="text-sm font-semibold mb-1 text-center">
               {clock.city}
             </div>
             <AnalogueClock timezone={clock.timezone} currentTime={currentTime} />
-            <div className="text-xl font-bold font-mono tabular-nums mt-2">
+            <div className="text-base font-bold font-mono tabular-nums mt-1">
               {formatTime(clock.timezone)}
             </div>
           </div>
