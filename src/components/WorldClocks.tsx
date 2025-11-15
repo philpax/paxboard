@@ -27,9 +27,9 @@ function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
   const { hours, minutes, seconds } = getTimeInTimezone();
 
   // Calculate angles for clock hands
-  const secondAngle = (seconds * 6) - 90; // 6 degrees per second, -90 to start at 12
-  const minuteAngle = (minutes * 6 + seconds * 0.1) - 90; // 6 degrees per minute
-  const hourAngle = ((hours % 12) * 30 + minutes * 0.5) - 90; // 30 degrees per hour
+  const secondAngle = seconds * 6 - 90; // 6 degrees per second, -90 to start at 12
+  const minuteAngle = minutes * 6 + seconds * 0.1 - 90; // 6 degrees per minute
+  const hourAngle = (hours % 12) * 30 + minutes * 0.5 - 90; // 30 degrees per hour
 
   return (
     <svg viewBox="0 0 100 100" className="w-24 h-24">
@@ -67,8 +67,8 @@ function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
       <line
         x1="50"
         y1="50"
-        x2={50 + 25 * Math.cos(hourAngle * Math.PI / 180)}
-        y2={50 + 25 * Math.sin(hourAngle * Math.PI / 180)}
+        x2={50 + 25 * Math.cos((hourAngle * Math.PI) / 180)}
+        y2={50 + 25 * Math.sin((hourAngle * Math.PI) / 180)}
         stroke="white"
         strokeWidth="4"
         strokeLinecap="round"
@@ -78,8 +78,8 @@ function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
       <line
         x1="50"
         y1="50"
-        x2={50 + 35 * Math.cos(minuteAngle * Math.PI / 180)}
-        y2={50 + 35 * Math.sin(minuteAngle * Math.PI / 180)}
+        x2={50 + 35 * Math.cos((minuteAngle * Math.PI) / 180)}
+        y2={50 + 35 * Math.sin((minuteAngle * Math.PI) / 180)}
         stroke="white"
         strokeWidth="3"
         strokeLinecap="round"
@@ -89,8 +89,8 @@ function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
       <line
         x1="50"
         y1="50"
-        x2={50 + 38 * Math.cos(secondAngle * Math.PI / 180)}
-        y2={50 + 38 * Math.sin(secondAngle * Math.PI / 180)}
+        x2={50 + 38 * Math.cos((secondAngle * Math.PI) / 180)}
+        y2={50 + 38 * Math.sin((secondAngle * Math.PI) / 180)}
         stroke="#ff6b6b"
         strokeWidth="1.5"
         strokeLinecap="round"
@@ -134,16 +134,19 @@ export function WorldClocks() {
   return (
     <section>
       <h2 className="text-2xl font-semibold mb-2 text-center">world clocks</h2>
-      <div className="flex justify-between gap-1">
+      <div className="flex justify-between gap-2">
         {clocks.map((clock) => (
           <div
             key={clock.timezone}
-            className="bg-[var(--color-bg-secondary)] rounded-lg p-2 hover:brightness-125 transition-all duration-200 flex-shrink-0 flex flex-col items-center"
+            className="bg-[var(--color-bg-secondary)] p-2 hover:brightness-125 transition-all duration-200 flex-grow-1 flex flex-col items-center"
           >
             <div className="text-sm font-semibold mb-1 text-center">
               {clock.city}
             </div>
-            <AnalogueClock timezone={clock.timezone} currentTime={currentTime} />
+            <AnalogueClock
+              timezone={clock.timezone}
+              currentTime={currentTime}
+            />
             <div className="text-base font-bold font-mono tabular-nums mt-1">
               {formatTime(clock.timezone)}
             </div>
