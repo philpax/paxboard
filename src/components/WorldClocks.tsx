@@ -104,6 +104,7 @@ function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
 
 export function WorldClocks() {
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [copiedTimezone, setCopiedTimezone] = useState<string | null>(null);
 
   const clocks: Clock[] = [
     { city: "San Francisco", timezone: "America/Los_Angeles" },
@@ -131,6 +132,78 @@ export function WorldClocks() {
     }).format(currentTime);
   };
 
+  const getISO8601Time = (timezone: string) => {
+    // Create a date string in the target timezone
+    const dateString = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(currentTime);
+
+    // Parse the formatted string
+    const [date, time] = dateString.split(", ");
+    const [month, day, year] = date.split("/");
+    const [hour, minute, second] = time.split(":");
+
+    // Get the timezone offset in ISO8601 format
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      timeZoneName: "shortOffset",
+    });
+    const parts = formatter.formatToParts(currentTime);
+    const offsetPart = parts.find((part) => part.type === "timeZoneName");
+    const offsetStr = offsetPart?.value || "GMT";
+
+    let offset: string;
+    if (offsetStr === "GMT") {
+      offset = "Z";
+    } else {
+      // Parse offset like "GMT-8" or "GMT+5:30" to "-08:00" or "+05:30"
+      const match = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/);
+      if (match) {
+        const sign = match[1];
+        const hours = match[2].padStart(2, "0");
+        const minutes = match[3] || "00";
+        offset = `${sign}${hours}:${minutes}`;
+      } else {
+        offset = "Z";
+      }
+    }
+
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}${offset}`;
+  };
+
+  const handleClockClick = async (timezone: string) => {
+    const iso8601Time = getISO8601Time(timezone);
+    try {
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(iso8601Time);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = iso8601Time;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
+      setCopiedTimezone(timezone);
+      setTimeout(() => setCopiedTimezone(null), 1500);
+    } catch (err) {
+      console.error("Failed to copy to clipboard:", err);
+    }
+  };
+
   return (
     <section>
       <h2 className="text-2xl font-semibold mb-2 text-center">world clocks</h2>
@@ -138,7 +211,9 @@ export function WorldClocks() {
         {clocks.map((clock) => (
           <div
             key={clock.timezone}
-            className="bg-[var(--color-bg-secondary)] p-2 hover:brightness-125 transition-all duration-200 flex-grow-1 flex flex-col items-center"
+            className="bg-[var(--color-bg-secondary)] p-2 hover:brightness-125 transition-all duration-200 flex-grow-1 flex flex-col items-center cursor-pointer relative"
+            onClick={() => handleClockClick(clock.timezone)}
+            title="Click to copy ISO8601 time"
           >
             <div className="text-sm font-semibold mb-1 text-center">
               {clock.city}
@@ -150,6 +225,11 @@ export function WorldClocks() {
             <div className="text-base font-bold font-mono tabular-nums mt-1">
               {formatTime(clock.timezone)}
             </div>
+            {copiedTimezone === clock.timezone && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-75 text-green-400 font-semibold animate-pulse">
+                Copied!
+              </div>
+            )}
           </div>
         ))}
       </div>
