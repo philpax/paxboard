@@ -165,7 +165,22 @@ export function WorldClocks() {
   const handleClockClick = async (timezone: string) => {
     const iso8601Time = getISO8601Time(timezone);
     try {
-      await navigator.clipboard.writeText(iso8601Time);
+      // Try modern clipboard API first
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(iso8601Time);
+      } else {
+        // Fallback for older browsers or non-secure contexts
+        const textArea = document.createElement("textarea");
+        textArea.value = iso8601Time;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textArea);
+      }
       setCopiedTimezone(timezone);
       setTimeout(() => setCopiedTimezone(null), 1500);
     } catch (err) {
