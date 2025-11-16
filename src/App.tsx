@@ -1,5 +1,6 @@
 import { LocalServices } from "./components/LocalServices";
 import { WorldClocks } from "./components/WorldClocks";
+import Weather from "./components/Weather";
 import { AIServices } from "./components/AIServices";
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <main className="mt-4 space-y-8">
         <LocalServices />
         <WorldClocks />
+        <Weather />
         <AIServices />
       </main>
     </div>
