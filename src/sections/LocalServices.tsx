@@ -1,5 +1,6 @@
 import type { Service } from "../types";
 import { config } from "../config";
+import { SectionHeader } from "../components/SectionHeader";
 
 export function LocalServices() {
   const services: Service[] = [
@@ -12,9 +13,7 @@ export function LocalServices() {
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold mb-2 text-center">
-        local services
-      </h2>
+      <SectionHeader title="local services" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {services.map((service) => (
           <a

@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import type { ProxyStatus } from "../types";
-import { ServiceTile } from "./ServiceTile";
-import { ProgressBar } from "./ProgressBar";
+import { ServiceTile } from "../components/ServiceTile";
+import { ProgressBar } from "../components/ProgressBar";
 import { config } from "../config";
+import { SectionHeader } from "../components/SectionHeader";
 
 export function AIServices() {
   const [proxyStatus, setProxyStatus] = useState<ProxyStatus | null>(null);
@@ -52,7 +53,7 @@ export function AIServices() {
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold mb-2 text-center">ai services</h2>
+      <SectionHeader title="ai services" />
       <div>
         {/* Main LMP tile */}
         <a

@@ -1,6 +1,18 @@
 import { useEffect, useState } from "react";
+import { SectionHeader } from "../components/SectionHeader";
 
-export interface WeatherData {
+interface WeatherLocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+interface CachedWeatherData {
+  data: WeatherData;
+  timestamp: number;
+}
+
+interface WeatherData {
   latitude: number;
   longitude: number;
   current: {
@@ -24,23 +36,25 @@ export interface WeatherData {
   };
 }
 
-export interface WeatherLocation {
-  name: string;
-  latitude: number;
-  longitude: number;
-}
-
-export interface CachedWeatherData {
-  data: WeatherData;
-  timestamp: number;
-}
-
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 const LOCATIONS: WeatherLocation[] = [
   { name: "Stockholm", latitude: 59.3293, longitude: 18.0686 },
   { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
 ];
+
+export default function Weather() {
+  return (
+    <section>
+      <SectionHeader title="weather" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {LOCATIONS.map((location) => (
+          <WeatherCard key={location.name} location={location} />
+        ))}
+      </div>
+    </section>
+  );
+}
 
 // WMO Weather interpretation codes
 const getWeatherDescription = (code: number): string => {
@@ -272,19 +286,6 @@ function WeatherCard({ location }: WeatherCardProps) {
 
       <div className="text-xs opacity-50 mt-2 text-center">
         Updated: {new Date(current.time).toLocaleString()}
-      </div>
-    </div>
-  );
-}
-
-export default function Weather() {
-  return (
-    <div className="mb-8">
-      <h2 className="text-2xl font-bold mb-4 text-center">Weather</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {LOCATIONS.map((location) => (
-          <WeatherCard key={location.name} location={location} />
-        ))}
       </div>
     </div>
   );

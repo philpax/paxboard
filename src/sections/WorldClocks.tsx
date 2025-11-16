@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
+import { SectionHeader } from "../components/SectionHeader";
 
 interface Clock {
   city: string;
   timezone: string;
 }
 
-interface AnaloguClockProps {
+function AnalogueClock({
+  timezone,
+  currentTime,
+}: {
   timezone: string;
   currentTime: Date;
-}
-
-function AnalogueClock({ timezone, currentTime }: AnaloguClockProps) {
+}) {
   const getTimeInTimezone = () => {
     const timeString = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
@@ -206,7 +208,7 @@ export function WorldClocks() {
 
   return (
     <section>
-      <h2 className="text-2xl font-semibold mb-2 text-center">world clocks</h2>
+      <SectionHeader title="world clocks" />
       <div className="flex justify-between gap-2">
         {clocks.map((clock) => (
           <div
