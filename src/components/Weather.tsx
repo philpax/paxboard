@@ -1,9 +1,5 @@
 import { useEffect, useState } from "react";
-import type {
-  WeatherData,
-  WeatherLocation,
-  CachedWeatherData,
-} from "../types";
+import type { WeatherData, WeatherLocation, CachedWeatherData } from "../types";
 
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
