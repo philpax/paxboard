@@ -156,7 +156,7 @@ export function WorldClocks() {
       timeZoneName: "shortOffset",
     });
     const parts = formatter.formatToParts(currentTime);
-    const offsetPart = parts.find(part => part.type === "timeZoneName");
+    const offsetPart = parts.find((part) => part.type === "timeZoneName");
     const offset = offsetPart?.value || "Z";
 
     return `${year}-${month}-${day}T${hour}:${minute}:${second}${offset === "GMT" ? "Z" : offset.replace("GMT", "")}`;
