@@ -150,16 +150,32 @@ export function WorldClocks() {
     const [month, day, year] = date.split("/");
     const [hour, minute, second] = time.split(":");
 
-    // Get the timezone offset
+    // Get the timezone offset in ISO8601 format
     const formatter = new Intl.DateTimeFormat("en-US", {
       timeZone: timezone,
       timeZoneName: "shortOffset",
     });
     const parts = formatter.formatToParts(currentTime);
     const offsetPart = parts.find((part) => part.type === "timeZoneName");
-    const offset = offsetPart?.value || "Z";
+    const offsetStr = offsetPart?.value || "GMT";
 
-    return `${year}-${month}-${day}T${hour}:${minute}:${second}${offset === "GMT" ? "Z" : offset.replace("GMT", "")}`;
+    let offset: string;
+    if (offsetStr === "GMT") {
+      offset = "Z";
+    } else {
+      // Parse offset like "GMT-8" or "GMT+5:30" to "-08:00" or "+05:30"
+      const match = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/);
+      if (match) {
+        const sign = match[1];
+        const hours = match[2].padStart(2, "0");
+        const minutes = match[3] || "00";
+        offset = `${sign}${hours}:${minutes}`;
+      } else {
+        offset = "Z";
+      }
+    }
+
+    return `${year}-${month}-${day}T${hour}:${minute}:${second}${offset}`;
   };
 
   const handleClockClick = async (timezone: string) => {
