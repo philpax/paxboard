@@ -1,5 +1,39 @@
 import { useEffect, useState } from "react";
-import type { WeatherData, WeatherLocation, CachedWeatherData } from "../types";
+
+export interface WeatherData {
+  latitude: number;
+  longitude: number;
+  current: {
+    time: string;
+    temperature_2m: number;
+    relative_humidity_2m: number;
+    apparent_temperature: number;
+    precipitation: number;
+    weather_code: number;
+    wind_speed_10m: number;
+    wind_direction_10m: number;
+  };
+  current_units: {
+    temperature_2m: string;
+    relative_humidity_2m: string;
+    apparent_temperature: string;
+    precipitation: string;
+    weather_code: string;
+    wind_speed_10m: string;
+    wind_direction_10m: string;
+  };
+}
+
+export interface WeatherLocation {
+  name: string;
+  latitude: number;
+  longitude: number;
+}
+
+export interface CachedWeatherData {
+  data: WeatherData;
+  timestamp: number;
+}
 
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
@@ -163,11 +197,13 @@ function WeatherCard({ location }: WeatherCardProps) {
     loadWeather();
   }, [location]);
 
+  const locationName = <div className="text-xl font-bold">{location.name}</div>;
+
   if (loading) {
     return (
-      <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 text-center">
+      <div className="bg-[var(--color-bg-secondary)] p-4 text-center">
         <div className="animate-pulse">
-          <div className="text-xl font-bold mb-2">{location.name}</div>
+          {locationName}
           <div className="text-4xl mb-2">⏳</div>
           <div className="text-sm opacity-75">Loading weather...</div>
         </div>
@@ -177,8 +213,8 @@ function WeatherCard({ location }: WeatherCardProps) {
 
   if (error || !weather) {
     return (
-      <div className="bg-[var(--color-stopped)] rounded-lg p-4 text-center">
-        <div className="text-xl font-bold mb-2">{location.name}</div>
+      <div className="bg-[var(--color-stopped)] p-4 text-center">
+        {locationName}
         <div className="text-4xl mb-2">❌</div>
         <div className="text-sm opacity-75">{error || "No data available"}</div>
       </div>
@@ -191,10 +227,10 @@ function WeatherCard({ location }: WeatherCardProps) {
   const windDir = getWindDirection(current.wind_direction_10m);
 
   return (
-    <div className="bg-[var(--color-bg-secondary)] rounded-lg p-4 hover:brightness-110 transition-all duration-200">
-      <div className="text-xl font-bold mb-3">{location.name}</div>
+    <div className="bg-[var(--color-bg-secondary)] p-4 hover:brightness-110 transition-all duration-200">
+      {locationName}
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-2">
         <div>
           <div className="text-5xl font-bold tabular-nums">
             {Math.round(current.temperature_2m)}
@@ -208,16 +244,16 @@ function WeatherCard({ location }: WeatherCardProps) {
         <div className="text-6xl">{icon}</div>
       </div>
 
-      <div className="text-lg mb-3">{description}</div>
+      <div className="text-lg mb-2">{description}</div>
 
       <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-black bg-opacity-20 rounded p-2">
+        <div className="bg-violet-950 bg-opacity-20 p-2">
           <div className="opacity-75">Humidity</div>
           <div className="font-bold tabular-nums">
             {current.relative_humidity_2m}%
           </div>
         </div>
-        <div className="bg-black bg-opacity-20 rounded p-2">
+        <div className="bg-violet-950 bg-opacity-20 p-2">
           <div className="opacity-75">Wind</div>
           <div className="font-bold tabular-nums">
             {windDir} {Math.round(current.wind_speed_10m)}{" "}
@@ -225,7 +261,7 @@ function WeatherCard({ location }: WeatherCardProps) {
           </div>
         </div>
         {current.precipitation > 0 && (
-          <div className="bg-black bg-opacity-20 rounded p-2 col-span-2">
+          <div className="bg-violet-950 bg-opacity-20 p-2 col-span-2">
             <div className="opacity-75">Precipitation</div>
             <div className="font-bold tabular-nums">
               {current.precipitation} {current_units.precipitation}
@@ -234,8 +270,8 @@ function WeatherCard({ location }: WeatherCardProps) {
         )}
       </div>
 
-      <div className="text-xs opacity-50 mt-3 text-center">
-        Updated: {new Date(current.time).toLocaleTimeString()}
+      <div className="text-xs opacity-50 mt-2 text-center">
+        Updated: {new Date(current.time).toLocaleString()}
       </div>
     </div>
   );
@@ -245,7 +281,7 @@ export default function Weather() {
   return (
     <div className="mb-8">
       <h2 className="text-2xl font-bold mb-4 text-center">Weather</h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {LOCATIONS.map((location) => (
           <WeatherCard key={location.name} location={location} />
         ))}
