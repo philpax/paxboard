@@ -115,27 +115,33 @@ async function getMemoryStats(): Promise<MemoryStats> {
 // Parse disk usage from df
 async function getDiskStats(): Promise<DiskStats[]> {
   try {
-    const { stdout } = await execAsync(
-      "df -B1 / /home 2>/dev/null | tail -n +2"
-    );
+    const { stdout } = await execAsync("df -B1 | tail -n +2");
     const lines = stdout.trim().split("\n");
     const disks: DiskStats[] = [];
+    const seenPaths = new Set<string>();
 
     for (const line of lines) {
       const parts = line.trim().split(/\s+/);
       if (parts.length >= 6) {
-        const total = parseInt(parts[1]);
-        const used = parseInt(parts[2]);
-        const available = parseInt(parts[3]);
+        const device = parts[0];
         const path = parts[5];
 
-        disks.push({
-          path,
-          total: Math.round((total / 1024 / 1024 / 1024) * 100) / 100,
-          used: Math.round((used / 1024 / 1024 / 1024) * 100) / 100,
-          available: Math.round((available / 1024 / 1024 / 1024) * 100) / 100,
-          usage: Math.round((used / total) * 1000) / 10,
-        });
+        // Only include devices that start with /dev and avoid duplicates
+        if (device.startsWith("/dev") && !seenPaths.has(path)) {
+          const total = parseInt(parts[1]);
+          const used = parseInt(parts[2]);
+          const available = parseInt(parts[3]);
+
+          seenPaths.add(path);
+          disks.push({
+            path,
+            total: Math.round((total / 1024 / 1024 / 1024) * 100) / 100,
+            used: Math.round((used / 1024 / 1024 / 1024) * 100) / 100,
+            available:
+              Math.round((available / 1024 / 1024 / 1024) * 100) / 100,
+            usage: Math.round((used / total) * 1000) / 10,
+          });
+        }
       }
     }
 
@@ -170,14 +176,17 @@ async function getGPUStats(): Promise<GPUStats | null> {
       };
     }
     return null;
-  } catch (error) {
+  } catch {
     // nvidia-smi not available or no GPU
     return null;
   }
 }
 
 // Parse network stats from /proc/net/dev
-let previousNetworkStats: Map<string, { rx: number; tx: number; time: number }> = new Map();
+const previousNetworkStats: Map<
+  string,
+  { rx: number; tx: number; time: number }
+> = new Map();
 
 async function getNetworkStats(): Promise<NetworkStats[]> {
   try {

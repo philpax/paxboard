@@ -1,6 +1,54 @@
 import { useState, useEffect } from "react";
-import type { SystemStats } from "../types";
 import { SectionHeader } from "../components/SectionHeader";
+
+interface CPUStats {
+  usage: number;
+  temperature: number | null;
+  cores: number;
+}
+
+interface MemoryStats {
+  total: number;
+  used: number;
+  available: number;
+  usage: number;
+}
+
+interface DiskStats {
+  path: string;
+  total: number;
+  used: number;
+  available: number;
+  usage: number;
+}
+
+interface GPUStats {
+  name: string;
+  temperature: number;
+  utilization: number;
+  memoryUsed: number;
+  memoryTotal: number;
+  memoryUsage: number;
+  powerDraw: number;
+  powerLimit: number;
+}
+
+interface NetworkStats {
+  interface: string;
+  rxBytes: number;
+  txBytes: number;
+  rxRate: string;
+  txRate: string;
+}
+
+interface SystemStats {
+  cpu: CPUStats;
+  memory: MemoryStats;
+  disks: DiskStats[];
+  gpu: GPUStats | null;
+  network: NetworkStats[];
+  timestamp: number;
+}
 
 interface StatBarProps {
   label: string;
@@ -9,7 +57,12 @@ interface StatBarProps {
   color?: string;
 }
 
-function StatBar({ label, value, percentage, color = "bg-blue-400" }: StatBarProps) {
+function StatBar({
+  label,
+  value,
+  percentage,
+  color = "bg-blue-400",
+}: StatBarProps) {
   return (
     <div className="text-xs mb-2">
       <div className="flex justify-between mb-1">
@@ -126,7 +179,10 @@ export function SystemStats() {
 
         {/* Disk Stats */}
         {stats.disks.map((disk) => (
-          <div key={disk.path} className="p-4 bg-[var(--color-bg-secondary)] shadow-lg">
+          <div
+            key={disk.path}
+            className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
+          >
             <div className="text-lg font-semibold mb-3">Disk ({disk.path})</div>
             <StatBar
               label="Usage"
@@ -172,7 +228,8 @@ export function SystemStats() {
               <div className="flex justify-between">
                 <span>Power</span>
                 <span>
-                  {stats.gpu.powerDraw.toFixed(0)} / {stats.gpu.powerLimit.toFixed(0)} W
+                  {stats.gpu.powerDraw.toFixed(0)} /{" "}
+                  {stats.gpu.powerLimit.toFixed(0)} W
                 </span>
               </div>
             </div>
