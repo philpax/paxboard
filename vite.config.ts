@@ -10,6 +10,11 @@ export default defineConfig({
     allowedHosts: ["redline"],
     port: 1729,
     proxy: {
+      "/api/system-stats": {
+        target: "http://redline:7072",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
+      },
       "/api": {
         target: "http://redline:7071",
         changeOrigin: true,
