@@ -45,7 +45,7 @@ interface SystemStats {
   cpu: CPUStats;
   memory: MemoryStats;
   disks: DiskStats[];
-  gpu: GPUStats | null;
+  gpus: GPUStats[];
   network: NetworkStats[];
   timestamp: number;
 }
@@ -200,41 +200,45 @@ export function SystemStats() {
         ))}
 
         {/* GPU Stats */}
-        {stats.gpu && (
-          <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg">
-            <div className="text-lg font-semibold mb-3">GPU</div>
+        {stats.gpus.map((gpu, index) => (
+          <div
+            key={index}
+            className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
+          >
+            <div className="text-lg font-semibold mb-3">
+              GPU {stats.gpus.length > 1 ? index : ""}
+            </div>
             <div className="text-sm text-[var(--color-secondary)] mb-2">
-              {stats.gpu.name}
+              {gpu.name}
             </div>
             <StatBar
               label="Utilization"
-              value={`${stats.gpu.utilization.toFixed(0)}%`}
-              percentage={stats.gpu.utilization}
+              value={`${gpu.utilization.toFixed(0)}%`}
+              percentage={gpu.utilization}
               color="bg-red-400"
             />
             <StatBar
               label="Memory"
-              value={`${stats.gpu.memoryUsed.toFixed(0)} / ${stats.gpu.memoryTotal.toFixed(0)} MB`}
-              percentage={stats.gpu.memoryUsage}
+              value={`${gpu.memoryUsed.toFixed(0)} / ${gpu.memoryTotal.toFixed(0)} MB`}
+              percentage={gpu.memoryUsage}
               color="bg-pink-400"
             />
             <div className="text-xs mb-2">
               <div className="flex justify-between">
                 <span>Temperature</span>
-                <span>{stats.gpu.temperature.toFixed(0)}°C</span>
+                <span>{gpu.temperature.toFixed(0)}°C</span>
               </div>
             </div>
             <div className="text-xs">
               <div className="flex justify-between">
                 <span>Power</span>
                 <span>
-                  {stats.gpu.powerDraw.toFixed(0)} /{" "}
-                  {stats.gpu.powerLimit.toFixed(0)} W
+                  {gpu.powerDraw.toFixed(0)} / {gpu.powerLimit.toFixed(0)} W
                 </span>
               </div>
             </div>
           </div>
-        )}
+        ))}
 
         {/* Network Stats */}
         {stats.network.length > 0 && (

@@ -57,7 +57,7 @@ interface SystemStats {
   cpu: CPUStats;
   memory: MemoryStats;
   disks: DiskStats[];
-  gpu: GPUStats | null;
+  gpus: GPUStats[];
   network: NetworkStats[];
   timestamp: number;
 }
@@ -159,32 +159,38 @@ async function getDiskStats(): Promise<DiskStats[]> {
 }
 
 // Parse GPU stats from nvidia-smi
-async function getGPUStats(): Promise<GPUStats | null> {
+async function getGPUStats(): Promise<GPUStats[]> {
   try {
     const { stdout } = await execAsync(
       'nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw,power.limit --format=csv,noheader,nounits'
     );
-    const parts = stdout.trim().split(",").map((s) => s.trim());
+    const lines = stdout.trim().split("\n");
+    const gpus: GPUStats[] = [];
 
-    if (parts.length >= 7) {
-      const memoryUsed = parseFloat(parts[3]);
-      const memoryTotal = parseFloat(parts[4]);
+    for (const line of lines) {
+      const parts = line.split(",").map((s) => s.trim());
 
-      return {
-        name: parts[0],
-        temperature: parseFloat(parts[1]),
-        utilization: parseFloat(parts[2]),
-        memoryUsed,
-        memoryTotal,
-        memoryUsage: Math.round((memoryUsed / memoryTotal) * 1000) / 10,
-        powerDraw: parseFloat(parts[5]),
-        powerLimit: parseFloat(parts[6]),
-      };
+      if (parts.length >= 7) {
+        const memoryUsed = parseFloat(parts[3]);
+        const memoryTotal = parseFloat(parts[4]);
+
+        gpus.push({
+          name: parts[0],
+          temperature: parseFloat(parts[1]),
+          utilization: parseFloat(parts[2]),
+          memoryUsed,
+          memoryTotal,
+          memoryUsage: Math.round((memoryUsed / memoryTotal) * 1000) / 10,
+          powerDraw: parseFloat(parts[5]),
+          powerLimit: parseFloat(parts[6]),
+        });
+      }
     }
-    return null;
+
+    return gpus;
   } catch {
     // nvidia-smi not available or no GPU
-    return null;
+    return [];
   }
 }
 
@@ -263,7 +269,7 @@ function formatBytes(bytes: number): string {
 // API endpoint for system stats
 app.get("/api/system-stats", async (req, res) => {
   try {
-    const [cpu, memory, disks, gpu, network] = await Promise.all([
+    const [cpu, memory, disks, gpus, network] = await Promise.all([
       getCPUStats(),
       getMemoryStats(),
       getDiskStats(),
@@ -275,7 +281,7 @@ app.get("/api/system-stats", async (req, res) => {
       cpu,
       memory,
       disks,
-      gpu,
+      gpus,
       network,
       timestamp: Date.now(),
     };
