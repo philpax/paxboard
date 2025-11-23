@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 1730;
+const PORT = 1729;
 const isDev = process.env.NODE_ENV !== "production";
 
 interface CPUStats {
