@@ -2,6 +2,7 @@ import { LocalServices } from "./sections/LocalServices";
 import { WorldClocks } from "./sections/WorldClocks";
 import Weather from "./sections/Weather";
 import { AIServices } from "./sections/AIServices";
+import { SystemStats } from "./sections/SystemStats";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
         <LocalServices />
         <WorldClocks />
         <Weather />
+        <SystemStats />
         <AIServices />
       </main>
     </div>
