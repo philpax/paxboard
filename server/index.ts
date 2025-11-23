@@ -1,11 +1,17 @@
 import express from "express";
 import { exec } from "child_process";
 import { promisify } from "util";
+import { createProxyMiddleware } from "http-proxy-middleware";
+import { fileURLToPath } from "url";
+import { dirname, resolve } from "path";
 
 const execAsync = promisify(exec);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 const app = express();
-const PORT = 7072;
+const PORT = 1730;
+const isDev = process.env.NODE_ENV !== "production";
 
 interface CPUStats {
   usage: number; // percentage
@@ -223,7 +229,11 @@ async function getNetworkStats(): Promise<NetworkStats[]> {
         }
 
         // Update previous stats
-        previousNetworkStats.set(iface, { rx: rxBytes, tx: txBytes, time: currentTime });
+        previousNetworkStats.set(iface, {
+          rx: rxBytes,
+          tx: txBytes,
+          time: currentTime,
+        });
 
         stats.push({
           interface: iface,
@@ -245,11 +255,13 @@ async function getNetworkStats(): Promise<NetworkStats[]> {
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return bytes.toFixed(0) + " B";
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-  if (bytes < 1024 * 1024 * 1024) return (bytes / 1024 / 1024).toFixed(1) + " MB";
+  if (bytes < 1024 * 1024 * 1024)
+    return (bytes / 1024 / 1024).toFixed(1) + " MB";
   return (bytes / 1024 / 1024 / 1024).toFixed(1) + " GB";
 }
 
-app.get("/system-stats", async (req, res) => {
+// API endpoint for system stats
+app.get("/api/system-stats", async (req, res) => {
   try {
     const [cpu, memory, disks, gpu, network] = await Promise.all([
       getCPUStats(),
@@ -275,6 +287,44 @@ app.get("/system-stats", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`System stats server running on port ${PORT}`);
-});
+// Proxy other /api requests to the AI services backend
+app.use(
+  "/api",
+  createProxyMiddleware({
+    target: "http://redline:7071",
+    changeOrigin: true,
+    pathRewrite: {
+      "^/api": "",
+    },
+  })
+);
+
+// Setup Vite or static file serving
+async function setupServer() {
+  if (isDev) {
+    // Development mode: use Vite middleware
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+
+    app.use(vite.middlewares);
+  } else {
+    // Production mode: serve static files
+    const distPath = resolve(__dirname, "../dist");
+    app.use(express.static(distPath));
+
+    // Serve index.html for all other routes (SPA)
+    app.get("*", (req, res) => {
+      res.sendFile(resolve(distPath, "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Mode: ${isDev ? "development" : "production"}`);
+  });
+}
+
+setupServer();
