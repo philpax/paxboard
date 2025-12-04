@@ -1,6 +1,10 @@
-import type { Service } from "../types";
 import { config } from "../config";
 import { SectionHeader } from "../components/SectionHeader";
+
+interface Service {
+  name: string;
+  url: string;
+}
 
 export function LocalServices() {
   const services: Service[] = [

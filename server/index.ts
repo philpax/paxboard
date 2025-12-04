@@ -4,6 +4,15 @@ import { promisify } from "util";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import type {
+  CoreStats,
+  CPUStats,
+  MemoryStats,
+  DiskStats,
+  GPUStats,
+  NetworkStats,
+  SystemStats,
+} from "../shared/types";
 
 const execAsync = promisify(exec);
 const __filename = fileURLToPath(import.meta.url);
@@ -12,62 +21,6 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = 1729;
 const isDev = process.env.NODE_ENV !== "production";
-
-interface CoreStats {
-  core: number;
-  mhz: number;
-  usage: number; // percentage
-}
-
-interface CPUStats {
-  usage: number; // percentage
-  temperature: number | null; // celsius
-  cores: number;
-  coreStats: CoreStats[]; // all cores with clock speeds and usage
-}
-
-interface MemoryStats {
-  total: number; // GB
-  used: number; // GB
-  available: number; // GB
-  usage: number; // percentage
-}
-
-interface DiskStats {
-  path: string;
-  total: number; // GB
-  used: number; // GB
-  available: number; // GB
-  usage: number; // percentage
-}
-
-interface GPUStats {
-  name: string;
-  temperature: number; // celsius
-  utilization: number; // percentage
-  memoryUsed: number; // MB
-  memoryTotal: number; // MB
-  memoryUsage: number; // percentage
-  powerDraw: number; // watts
-  powerLimit: number; // watts
-}
-
-interface NetworkStats {
-  interface: string;
-  rxBytes: number; // bytes
-  txBytes: number; // bytes
-  rxRate: string; // human readable
-  txRate: string; // human readable
-}
-
-interface SystemStats {
-  cpu: CPUStats;
-  memory: MemoryStats;
-  disks: DiskStats[];
-  gpus: GPUStats[];
-  network: NetworkStats[];
-  timestamp: number;
-}
 
 // Store previous CPU stats for rate calculation
 const previousCoreStats: Map<number, { total: number; active: number }> =

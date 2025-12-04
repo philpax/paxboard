@@ -1,65 +1,7 @@
 import { useState, useEffect } from "react";
 import { SectionHeader } from "../components/SectionHeader";
-import {
-  ProgressBarCore,
-  StatBar,
-} from "../components/ProgressBar";
-
-interface CoreStats {
-  core: number;
-  mhz: number;
-  usage: number;
-}
-
-interface CPUStats {
-  usage: number;
-  temperature: number | null;
-  cores: number;
-  coreStats: CoreStats[];
-}
-
-interface MemoryStats {
-  total: number;
-  used: number;
-  available: number;
-  usage: number;
-}
-
-interface DiskStats {
-  path: string;
-  total: number;
-  used: number;
-  available: number;
-  usage: number;
-}
-
-interface GPUStats {
-  name: string;
-  temperature: number;
-  utilization: number;
-  memoryUsed: number;
-  memoryTotal: number;
-  memoryUsage: number;
-  powerDraw: number;
-  powerLimit: number;
-}
-
-interface NetworkStats {
-  interface: string;
-  rxBytes: number;
-  txBytes: number;
-  rxRate: string;
-  txRate: string;
-}
-
-interface SystemStats {
-  cpu: CPUStats;
-  memory: MemoryStats;
-  disks: DiskStats[];
-  gpus: GPUStats[];
-  network: NetworkStats[];
-  timestamp: number;
-}
+import { ProgressBarCore, StatBar } from "../components/ProgressBar";
+import type { CPUStats, SystemStats } from "../../shared/types";
 
 function CPUDetailPopover({
   stats,

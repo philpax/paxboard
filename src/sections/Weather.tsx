@@ -172,11 +172,7 @@ const fetchWeatherData = async (
   return data;
 };
 
-interface WeatherCardProps {
-  location: WeatherLocation;
-}
-
-function WeatherCard({ location }: WeatherCardProps) {
+function WeatherCard({ location }: { location: WeatherLocation }) {
   const [weather, setWeather] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
