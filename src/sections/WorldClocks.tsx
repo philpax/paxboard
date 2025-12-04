@@ -110,7 +110,7 @@ export function WorldClocks() {
   return (
     <section>
       <SectionHeader title="world clocks" />
-      <div className="flex justify-between gap-2">
+      <div className="flex gap-2 overflow-x-auto">
         {clocks.map((clock) => (
           <div
             key={clock.timezone}
