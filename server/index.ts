@@ -272,7 +272,7 @@ async function getDiskStats(): Promise<DiskStats[]> {
       }
     }
 
-    return disks;
+    return disks.sort((a, b) => a.path.localeCompare(b.path));
   } catch (error) {
     console.error("Error getting disk stats:", error);
     return [];
