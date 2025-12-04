@@ -2,30 +2,18 @@ import { useState, useEffect } from "react";
 import { ProgressBar, ProgressBarCore } from "../components/ProgressBar";
 import { config } from "../config";
 import { SectionHeader } from "../components/SectionHeader";
-
-interface ResourceStatus {
-  total_available: number;
-  total_in_use: number;
-}
-
-interface ServiceStatus {
-  name: string;
-  service_url: string;
-  is_running: boolean;
-  resource_requirements: Record<string, number>;
-}
-
-interface ProxyStatus {
-  resources: Record<string, ResourceStatus>;
-  services: ServiceStatus[];
-}
+import type {
+  AIResourceStatus,
+  AIServiceStatus,
+  AIServicesStatus,
+} from "../../shared/types";
 
 function ServiceTile({
   service,
   resources,
 }: {
-  service: ServiceStatus;
-  resources: Record<string, ResourceStatus>;
+  service: AIServiceStatus;
+  resources: Record<string, AIResourceStatus>;
 }) {
   const bgColor = service.is_running
     ? "bg-[var(--color-bg-secondary)]"
@@ -76,14 +64,13 @@ function ServiceTile({
 }
 
 export function AIServices() {
-  const [proxyStatus, setProxyStatus] = useState<ProxyStatus | null>(null);
+  const [proxyStatus, setProxyStatus] = useState<AIServicesStatus | null>(null);
   const [loading, setLoading] = useState(true);
 
   const lmpServiceUrl = `${config.baseUrl}:7071`;
-  const proxyUrl = "/api"; // Use Vite proxy to avoid CORS
 
   useEffect(() => {
-    fetch(`${proxyUrl}/status`)
+    fetch("/api/ai-services-status")
       .then((res) => res.json())
       .then((data) => {
         setProxyStatus(data);
@@ -93,7 +80,7 @@ export function AIServices() {
         console.error("Failed to fetch proxy status:", err);
         setLoading(false);
       });
-  }, [proxyUrl]);
+  }, []);
 
   if (loading) {
     return (

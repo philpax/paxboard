@@ -1,5 +1,4 @@
-// System stats types (shared between frontend and server)
-
+// System stats types
 export interface CoreStats {
   core: number;
   mhz: number;
@@ -54,4 +53,22 @@ export interface SystemStats {
   gpus: GPUStats[];
   network: NetworkStats[];
   timestamp: number;
+}
+
+// AI Services types
+export interface AIResourceStatus {
+  total_available: number;
+  total_in_use: number;
+}
+
+export interface AIServiceStatus {
+  name: string;
+  service_url: string;
+  is_running: boolean;
+  resource_requirements: Record<string, number>;
+}
+
+export interface AIServicesStatus {
+  resources: Record<string, AIResourceStatus>;
+  services: AIServiceStatus[];
 }

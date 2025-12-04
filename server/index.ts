@@ -1,7 +1,6 @@
 import express from "express";
 import { exec } from "child_process";
 import { promisify } from "util";
-import { createProxyMiddleware } from "http-proxy-middleware";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
 import type {
@@ -334,17 +333,17 @@ app.get("/api/system-stats", async (req, res) => {
   }
 });
 
-// Proxy other /api requests to the AI services backend
-app.use(
-  "/api",
-  createProxyMiddleware({
-    target: "http://redline:7071",
-    changeOrigin: true,
-    pathRewrite: {
-      "^/api": "",
-    },
-  }),
-);
+// Fetch AI services status from large-model-proxy
+app.get("/api/ai-services-status", async (req, res) => {
+  try {
+    const response = await fetch("http://redline:7071/status");
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching AI services status:", error);
+    res.status(503).json({ error: "AI services unavailable" });
+  }
+});
 
 // Setup Vite or static file serving
 async function setupServer() {
