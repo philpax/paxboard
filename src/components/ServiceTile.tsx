@@ -1,4 +1,5 @@
 import type { ServiceStatus, ProxyStatus } from "../types";
+import { ProgressBarCore } from "./ProgressBar";
 
 export function ServiceTile({
   service,
@@ -41,14 +42,11 @@ export function ServiceTile({
                 </span>
               </div>
               {service.is_running && (
-                <div className="w-full bg-black rounded-full h-2">
-                  <div
-                    className="bg-green-400 h-2 rounded-full transition-all duration-300"
-                    style={{
-                      width: `${total > 0 ? (required / total) * 100 : 0}%`,
-                    }}
-                  />
-                </div>
+                <ProgressBarCore
+                  percentage={total > 0 ? (required / total) * 100 : 0}
+                  color="bg-green-400"
+                  rounded
+                />
               )}
             </div>
           );

@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { SectionHeader } from "../components/SectionHeader";
+import {
+  ProgressBarCore,
+  StatBar,
+} from "../components/ProgressBar";
 
 interface CoreStats {
   core: number;
@@ -57,35 +61,6 @@ interface SystemStats {
   timestamp: number;
 }
 
-interface StatBarProps {
-  label: string;
-  value: string;
-  percentage: number;
-  color?: string;
-}
-
-function StatBar({
-  label,
-  value,
-  percentage,
-  color = "bg-blue-400",
-}: StatBarProps) {
-  return (
-    <div className="text-xs mb-2">
-      <div className="flex justify-between mb-1">
-        <span>{label}</span>
-        <span>{value}</span>
-      </div>
-      <div className="w-full bg-black h-2">
-        <div
-          className={`${color} h-2 transition-all duration-300`}
-          style={{ width: `${Math.min(100, Math.max(0, percentage))}%` }}
-        />
-      </div>
-    </div>
-  );
-}
-
 function CPUDetailPopover({
   stats,
   onClose,
@@ -139,14 +114,11 @@ function CPUDetailPopover({
                 <span className="font-semibold">Core {core.core}</span>
                 <span>{core.mhz} MHz</span>
               </div>
-              <div className="w-full bg-black h-1.5">
-                <div
-                  className="bg-green-400 h-1.5 transition-all duration-300"
-                  style={{
-                    width: `${Math.min(100, Math.max(0, core.usage))}%`,
-                  }}
-                />
-              </div>
+              <ProgressBarCore
+                percentage={core.usage}
+                color="bg-green-400"
+                height="h-1.5"
+              />
               <div className="text-right text-[var(--color-secondary)] mt-0.5">
                 {core.usage.toFixed(1)}%
               </div>
