@@ -1,10 +1,17 @@
 import { useState, useEffect } from "react";
 import { SectionHeader } from "../components/SectionHeader";
 
+interface CoreStats {
+  core: number;
+  mhz: number;
+  usage: number;
+}
+
 interface CPUStats {
   usage: number;
   temperature: number | null;
   cores: number;
+  coreStats: CoreStats[];
 }
 
 interface MemoryStats {
@@ -79,10 +86,83 @@ function StatBar({
   );
 }
 
+function CPUDetailPopover({
+  stats,
+  onClose,
+}: {
+  stats: CPUStats;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[var(--color-bg)] p-4 w-[600px] max-h-[80vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-lg font-semibold">CPU Details</div>
+          <button
+            onClick={onClose}
+            className="text-[var(--color-secondary)] hover:text-[var(--color-primary)]"
+          >
+            [x]
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <StatBar
+            label="Total Usage"
+            value={`${stats.usage.toFixed(1)}%`}
+            percentage={stats.usage}
+            color="bg-green-400"
+          />
+          {stats.temperature !== null && (
+            <div className="text-xs mb-2">
+              <div className="flex justify-between">
+                <span>Temperature</span>
+                <span>{stats.temperature.toFixed(1)}°C</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-sm font-semibold mb-2">
+          Per-Core Stats ({stats.cores} cores)
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          {stats.coreStats.map((core) => (
+            <div key={core.core} className="p-2 bg-[var(--color-bg-secondary)]">
+              <div className="flex justify-between mb-1">
+                <span className="font-semibold">Core {core.core}</span>
+                <span>{core.mhz} MHz</span>
+              </div>
+              <div className="w-full bg-black/30 h-1.5">
+                <div
+                  className="bg-green-400 h-1.5 transition-all duration-300"
+                  style={{
+                    width: `${Math.min(100, Math.max(0, core.usage))}%`,
+                  }}
+                />
+              </div>
+              <div className="text-right text-[var(--color-secondary)] mt-0.5">
+                {core.usage.toFixed(1)}%
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function SystemStats() {
   const [stats, setStats] = useState<SystemStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [showCPUDetail, setShowCPUDetail] = useState(false);
 
   useEffect(() => {
     const fetchStats = () => {
@@ -136,7 +216,10 @@ export function SystemStats() {
       <SectionHeader title="system stats" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         {/* CPU Stats */}
-        <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg">
+        <div
+          className="p-4 bg-[var(--color-bg-secondary)] hover:brightness-110 transition-all duration-200 shadow-lg cursor-pointer"
+          onClick={() => setShowCPUDetail(true)}
+        >
           <div className="text-lg font-semibold mb-3">CPU</div>
           <StatBar
             label="Usage"
@@ -144,19 +227,31 @@ export function SystemStats() {
             percentage={stats.cpu.usage}
             color="bg-green-400"
           />
-          {stats.cpu.temperature !== null && (
-            <div className="text-xs mb-2">
+          <div className="text-xs space-y-0.5">
+            {stats.cpu.temperature !== null && (
               <div className="flex justify-between">
                 <span>Temperature</span>
                 <span>{stats.cpu.temperature.toFixed(1)}°C</span>
               </div>
-            </div>
-          )}
-          <div className="text-xs">
-            <div className="flex justify-between">
-              <span>Cores</span>
-              <span>{stats.cpu.cores}</span>
-            </div>
+            )}
+            {stats.cpu.coreStats && stats.cpu.coreStats.length > 0 && (
+              <div className="flex justify-between">
+                <span>Top Clock</span>
+                <span>
+                  Core{" "}
+                  {
+                    [...stats.cpu.coreStats].sort((a, b) => b.mhz - a.mhz)[0]
+                      .core
+                  }{" "}
+                  @{" "}
+                  {
+                    [...stats.cpu.coreStats].sort((a, b) => b.mhz - a.mhz)[0]
+                      .mhz
+                  }{" "}
+                  MHz
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -262,6 +357,13 @@ export function SystemStats() {
           </div>
         )}
       </div>
+
+      {showCPUDetail && (
+        <CPUDetailPopover
+          stats={stats.cpu}
+          onClose={() => setShowCPUDetail(false)}
+        />
+      )}
     </section>
   );
 }

@@ -13,10 +13,17 @@ const app = express();
 const PORT = 1729;
 const isDev = process.env.NODE_ENV !== "production";
 
+interface CoreStats {
+  core: number;
+  mhz: number;
+  usage: number; // percentage
+}
+
 interface CPUStats {
   usage: number; // percentage
   temperature: number | null; // celsius
   cores: number;
+  coreStats: CoreStats[]; // all cores with clock speeds and usage
 }
 
 interface MemoryStats {
@@ -62,12 +69,16 @@ interface SystemStats {
   timestamp: number;
 }
 
+// Store previous CPU stats for rate calculation
+const previousCoreStats: Map<number, { total: number; active: number }> =
+  new Map();
+
 // Parse CPU usage from top
 async function getCPUStats(): Promise<CPUStats> {
   try {
     // Get CPU usage from top
     const { stdout: topOutput } = await execAsync(
-      "top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/'"
+      "top -bn1 | grep 'Cpu(s)' | sed 's/.*, *\\([0-9.]*\\)%* id.*/\\1/'",
     );
     const idle = parseFloat(topOutput.trim());
     const usage = Math.round((100 - idle) * 10) / 10;
@@ -80,7 +91,7 @@ async function getCPUStats(): Promise<CPUStats> {
     let temperature: number | null = null;
     try {
       const { stdout: tempOutput } = await execAsync(
-        "sensors | grep -E 'Package id 0:|Tctl:' | head -1 | grep -oP '\\+\\K[0-9.]+' | head -1"
+        "sensors | grep -E 'Package id 0:|Tctl:' | head -1 | grep -oP '\\+\\K[0-9.]+' | head -1",
       );
       const temp = parseFloat(tempOutput.trim());
       if (!isNaN(temp)) {
@@ -90,10 +101,84 @@ async function getCPUStats(): Promise<CPUStats> {
       // Temperature sensor not available
     }
 
-    return { usage, temperature, cores };
+    // Get per-core clock speeds from /proc/cpuinfo
+    const coreClocks: Map<number, number> = new Map();
+    try {
+      const { stdout: cpuinfoOutput } = await execAsync(
+        "grep -E '^processor|^cpu MHz' /proc/cpuinfo",
+      );
+      const lines = cpuinfoOutput.trim().split("\n");
+
+      let currentCore = 0;
+      for (const line of lines) {
+        if (line.startsWith("processor")) {
+          currentCore = parseInt(line.split(":")[1].trim());
+        } else if (line.startsWith("cpu MHz")) {
+          const mhz = parseFloat(line.split(":")[1].trim());
+          coreClocks.set(currentCore, Math.round(mhz));
+        }
+      }
+    } catch {
+      // Could not read clock speeds
+    }
+
+    // Get per-core CPU usage from /proc/stat
+    const coreUsages: Map<number, number> = new Map();
+    try {
+      const { stdout: statOutput } = await execAsync(
+        "grep '^cpu[0-9]' /proc/stat",
+      );
+      const lines = statOutput.trim().split("\n");
+
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        const coreNum = parseInt(parts[0].replace("cpu", ""));
+        // user, nice, system, idle, iowait, irq, softirq, steal
+        const user = parseInt(parts[1]);
+        const nice = parseInt(parts[2]);
+        const system = parseInt(parts[3]);
+        const idle = parseInt(parts[4]);
+        const iowait = parseInt(parts[5]) || 0;
+        const irq = parseInt(parts[6]) || 0;
+        const softirq = parseInt(parts[7]) || 0;
+        const steal = parseInt(parts[8]) || 0;
+
+        const total =
+          user + nice + system + idle + iowait + irq + softirq + steal;
+        const active = total - idle - iowait;
+
+        // Store current values for rate calculation
+        const prev = previousCoreStats.get(coreNum);
+        if (prev) {
+          const totalDiff = total - prev.total;
+          const activeDiff = active - prev.active;
+          if (totalDiff > 0) {
+            coreUsages.set(
+              coreNum,
+              Math.round((activeDiff / totalDiff) * 1000) / 10,
+            );
+          }
+        }
+        previousCoreStats.set(coreNum, { total, active });
+      }
+    } catch {
+      // Could not read per-core usage
+    }
+
+    // Combine clock speeds and usage into coreStats
+    const coreStats: CoreStats[] = [];
+    for (let i = 0; i < cores; i++) {
+      coreStats.push({
+        core: i,
+        mhz: coreClocks.get(i) || 0,
+        usage: coreUsages.get(i) || 0,
+      });
+    }
+
+    return { usage, temperature, cores, coreStats };
   } catch (error) {
     console.error("Error getting CPU stats:", error);
-    return { usage: 0, temperature: null, cores: 0 };
+    return { usage: 0, temperature: null, cores: 0, coreStats: [] };
   }
 }
 
@@ -132,8 +217,12 @@ async function getDiskStats(): Promise<DiskStats[]> {
         const device = parts[0];
         const path = parts[5];
 
-        // Only include devices that start with /dev and avoid duplicates
-        if (device.startsWith("/dev") && !seenPaths.has(path)) {
+        // Only include devices that look real and avoid duplicates
+        if (
+          !device.includes("tmpfs") &&
+          !device.includes("efivarfs") &&
+          !seenPaths.has(path)
+        ) {
           const total = parseInt(parts[1]);
           const used = parseInt(parts[2]);
           const available = parseInt(parts[3]);
@@ -143,8 +232,7 @@ async function getDiskStats(): Promise<DiskStats[]> {
             path,
             total: Math.round((total / 1024 / 1024 / 1024) * 100) / 100,
             used: Math.round((used / 1024 / 1024 / 1024) * 100) / 100,
-            available:
-              Math.round((available / 1024 / 1024 / 1024) * 100) / 100,
+            available: Math.round((available / 1024 / 1024 / 1024) * 100) / 100,
             usage: Math.round((used / total) * 1000) / 10,
           });
         }
@@ -162,7 +250,7 @@ async function getDiskStats(): Promise<DiskStats[]> {
 async function getGPUStats(): Promise<GPUStats[]> {
   try {
     const { stdout } = await execAsync(
-      'nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw,power.limit --format=csv,noheader,nounits'
+      "nvidia-smi --query-gpu=name,temperature.gpu,utilization.gpu,memory.used,memory.total,power.draw,power.limit --format=csv,noheader,nounits",
     );
     const lines = stdout.trim().split("\n");
     const gpus: GPUStats[] = [];
@@ -302,7 +390,7 @@ app.use(
     pathRewrite: {
       "^/api": "",
     },
-  })
+  }),
 );
 
 // Setup Vite or static file serving
