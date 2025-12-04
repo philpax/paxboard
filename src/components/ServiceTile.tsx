@@ -41,7 +41,7 @@ export function ServiceTile({
                 </span>
               </div>
               {service.is_running && (
-                <div className="w-full bg-black bg-opacity-30 rounded-full h-2 border border-gray-600">
+                <div className="w-full bg-black rounded-full h-2">
                   <div
                     className="bg-green-400 h-2 rounded-full transition-all duration-300"
                     style={{
