@@ -1,13 +1,8 @@
 import { config } from "../config";
 import { SectionHeader } from "../components/SectionHeader";
 
-interface Service {
-  name: string;
-  url: string;
-}
-
 export function LocalServices() {
-  const services: Service[] = [
+  const services: { name: string; url: string }[] = [
     { name: "jellyfin", url: `${config.baseUrl}:8096` },
     { name: "navidrome", url: `${config.baseUrl}:4533` },
     { name: "plex", url: `${config.baseUrl}:32400` },

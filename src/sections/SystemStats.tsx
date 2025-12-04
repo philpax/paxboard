@@ -3,74 +3,9 @@ import { SectionHeader } from "../components/SectionHeader";
 import { ProgressBarCore, StatBar } from "../components/ProgressBar";
 import type { CPUStats, SystemStats } from "../../shared/types";
 
-function CPUDetailPopover({
-  stats,
-  onClose,
-}: {
-  stats: CPUStats;
-  onClose: () => void;
-}) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
-      onClick={onClose}
-    >
-      <div
-        className="bg-[var(--color-bg)] p-4 w-[600px] max-h-[80vh] overflow-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex justify-between items-center mb-4">
-          <div className="text-lg font-semibold">CPU Details</div>
-          <button
-            onClick={onClose}
-            className="text-[var(--color-secondary)] hover:text-[var(--color-primary)]"
-          >
-            [x]
-          </button>
-        </div>
-
-        <div className="mb-4">
-          <StatBar
-            label="Total Usage"
-            value={`${stats.usage.toFixed(1)}%`}
-            percentage={stats.usage}
-            color="bg-green-400"
-          />
-          {stats.temperature !== null && (
-            <div className="text-xs mb-2">
-              <div className="flex justify-between">
-                <span>Temperature</span>
-                <span>{stats.temperature.toFixed(1)}°C</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="text-sm font-semibold mb-2">
-          Per-Core Stats ({stats.cores} cores)
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          {stats.coreStats.map((core) => (
-            <div key={core.core} className="p-2 bg-[var(--color-bg-secondary)]">
-              <div className="flex justify-between mb-1">
-                <span className="font-semibold">Core {core.core}</span>
-                <span>{core.mhz} MHz</span>
-              </div>
-              <ProgressBarCore
-                percentage={core.usage}
-                color="bg-green-400"
-                height="h-1.5"
-              />
-              <div className="text-right text-[var(--color-secondary)] mt-0.5">
-                {core.usage.toFixed(1)}%
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+// =============================================================================
+// Exported Component
+// =============================================================================
 
 export function SystemStats() {
   const [stats, setStats] = useState<SystemStats | null>(null);
@@ -279,5 +214,78 @@ export function SystemStats() {
         />
       )}
     </section>
+  );
+}
+
+// =============================================================================
+// Internal Components
+// =============================================================================
+
+function CPUDetailPopover({
+  stats,
+  onClose,
+}: {
+  stats: CPUStats;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+      onClick={onClose}
+    >
+      <div
+        className="bg-[var(--color-bg)] p-4 w-[600px] max-h-[80vh] overflow-auto"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-between items-center mb-4">
+          <div className="text-lg font-semibold">CPU Details</div>
+          <button
+            onClick={onClose}
+            className="text-[var(--color-secondary)] hover:text-[var(--color-primary)]"
+          >
+            [x]
+          </button>
+        </div>
+
+        <div className="mb-4">
+          <StatBar
+            label="Total Usage"
+            value={`${stats.usage.toFixed(1)}%`}
+            percentage={stats.usage}
+            color="bg-green-400"
+          />
+          {stats.temperature !== null && (
+            <div className="text-xs mb-2">
+              <div className="flex justify-between">
+                <span>Temperature</span>
+                <span>{stats.temperature.toFixed(1)}°C</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="text-sm font-semibold mb-2">
+          Per-Core Stats ({stats.cores} cores)
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+          {stats.coreStats.map((core) => (
+            <div key={core.core} className="p-2 bg-[var(--color-bg-secondary)]">
+              <div className="flex justify-between mb-1">
+                <span className="font-semibold">Core {core.core}</span>
+                <span>{core.mhz} MHz</span>
+              </div>
+              <ProgressBarCore
+                percentage={core.usage}
+                color="bg-green-400"
+                height="h-1.5"
+              />
+              <div className="text-right text-[var(--color-secondary)] mt-0.5">
+                {core.usage.toFixed(1)}%
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }

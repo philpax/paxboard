@@ -21,6 +21,87 @@ const app = express();
 const PORT = 1729;
 const isDev = process.env.NODE_ENV !== "production";
 
+// =============================================================================
+// Server Setup & API Routes (Public Interface)
+// =============================================================================
+
+// API endpoint for system stats
+app.get("/api/system-stats", async (req, res) => {
+  try {
+    const [cpu, memory, disks, gpus, network] = await Promise.all([
+      getCPUStats(),
+      getMemoryStats(),
+      getDiskStats(),
+      getGPUStats(),
+      getNetworkStats(),
+    ]);
+
+    const stats: SystemStats = {
+      cpu,
+      memory,
+      disks,
+      gpus,
+      network,
+      timestamp: Date.now(),
+    };
+
+    res.json(stats);
+  } catch (error) {
+    console.error("Error gathering system stats:", error);
+    res.status(500).json({ error: "Failed to gather system stats" });
+  }
+});
+
+// Fetch AI services status from large-model-proxy
+app.get("/api/ai-services-status", async (req, res) => {
+  try {
+    const response = await fetch("http://redline:7071/status");
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching AI services status:", error);
+    res.status(503).json({ error: "AI services unavailable" });
+  }
+});
+
+// Setup Vite or static file serving
+async function setupServer() {
+  if (isDev) {
+    // Development mode: use Vite middleware
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: {
+        middlewareMode: true,
+        host: "0.0.0.0",
+        allowedHosts: ["redline"],
+      },
+      appType: "spa",
+    });
+
+    app.use(vite.middlewares);
+  } else {
+    // Production mode: serve static files
+    const distPath = resolve(__dirname, "../dist");
+    app.use(express.static(distPath));
+
+    // Serve index.html for all other routes (SPA)
+    app.get("*", (req, res) => {
+      res.sendFile(resolve(distPath, "index.html"));
+    });
+  }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
+    console.log(`Mode: ${isDev ? "development" : "production"}`);
+  });
+}
+
+setupServer();
+
+// =============================================================================
+// Implementation Details (Internal Functions)
+// =============================================================================
+
 // Store previous CPU stats for rate calculation
 const previousCoreStats: Map<number, { total: number; active: number }> =
   new Map();
@@ -305,76 +386,3 @@ function formatBytes(bytes: number): string {
     return (bytes / 1024 / 1024).toFixed(1) + " MB";
   return (bytes / 1024 / 1024 / 1024).toFixed(1) + " GB";
 }
-
-// API endpoint for system stats
-app.get("/api/system-stats", async (req, res) => {
-  try {
-    const [cpu, memory, disks, gpus, network] = await Promise.all([
-      getCPUStats(),
-      getMemoryStats(),
-      getDiskStats(),
-      getGPUStats(),
-      getNetworkStats(),
-    ]);
-
-    const stats: SystemStats = {
-      cpu,
-      memory,
-      disks,
-      gpus,
-      network,
-      timestamp: Date.now(),
-    };
-
-    res.json(stats);
-  } catch (error) {
-    console.error("Error gathering system stats:", error);
-    res.status(500).json({ error: "Failed to gather system stats" });
-  }
-});
-
-// Fetch AI services status from large-model-proxy
-app.get("/api/ai-services-status", async (req, res) => {
-  try {
-    const response = await fetch("http://redline:7071/status");
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Error fetching AI services status:", error);
-    res.status(503).json({ error: "AI services unavailable" });
-  }
-});
-
-// Setup Vite or static file serving
-async function setupServer() {
-  if (isDev) {
-    // Development mode: use Vite middleware
-    const { createServer: createViteServer } = await import("vite");
-    const vite = await createViteServer({
-      server: {
-        middlewareMode: true,
-        host: "0.0.0.0",
-        allowedHosts: ["redline"],
-      },
-      appType: "spa",
-    });
-
-    app.use(vite.middlewares);
-  } else {
-    // Production mode: serve static files
-    const distPath = resolve(__dirname, "../dist");
-    app.use(express.static(distPath));
-
-    // Serve index.html for all other routes (SPA)
-    app.get("*", (req, res) => {
-      res.sendFile(resolve(distPath, "index.html"));
-    });
-  }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://0.0.0.0:${PORT}`);
-    console.log(`Mode: ${isDev ? "development" : "production"}`);
-  });
-}
-
-setupServer();

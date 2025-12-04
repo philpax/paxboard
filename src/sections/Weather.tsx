@@ -1,6 +1,27 @@
 import { useEffect, useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
 
+// =============================================================================
+// Exported Component
+// =============================================================================
+
+export default function Weather() {
+  return (
+    <section>
+      <SectionHeader title="weather" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+        {LOCATIONS.map((location) => (
+          <WeatherCard key={location.name} location={location} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// =============================================================================
+// Internal Types
+// =============================================================================
+
 interface WeatherLocation {
   name: string;
   latitude: number;
@@ -36,6 +57,10 @@ interface WeatherData {
   };
 }
 
+// =============================================================================
+// Internal Constants
+// =============================================================================
+
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 const LOCATIONS: WeatherLocation[] = [
@@ -43,18 +68,128 @@ const LOCATIONS: WeatherLocation[] = [
   { name: "Melbourne", latitude: -37.8136, longitude: 144.9631 },
 ];
 
-export default function Weather() {
-  return (
-    <section>
-      <SectionHeader title="weather" />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        {LOCATIONS.map((location) => (
-          <WeatherCard key={location.name} location={location} />
-        ))}
+// =============================================================================
+// Internal Components
+// =============================================================================
+
+function WeatherCard({ location }: { location: WeatherLocation }) {
+  const [weather, setWeather] = useState<WeatherData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadWeather = async () => {
+      setLoading(true);
+      setError(null);
+
+      // Check cache first
+      const cachedData = getCachedData(location);
+      if (cachedData) {
+        setWeather(cachedData);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch fresh data
+      try {
+        const data = await fetchWeatherData(location);
+        setWeather(data);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load weather data",
+        );
+        console.error("Error fetching weather:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadWeather();
+  }, [location]);
+
+  const locationName = <div className="text-xl font-bold">{location.name}</div>;
+
+  if (loading) {
+    return (
+      <div className="bg-[var(--color-bg-secondary)] p-4 text-center">
+        <div className="animate-pulse">
+          {locationName}
+          <div className="text-4xl mb-2">⏳</div>
+          <div className="text-sm opacity-75">Loading weather...</div>
+        </div>
       </div>
-    </section>
+    );
+  }
+
+  if (error || !weather) {
+    return (
+      <div className="bg-[var(--color-stopped)] p-4 text-center">
+        {locationName}
+        <div className="text-4xl mb-2">❌</div>
+        <div className="text-sm opacity-75">{error || "No data available"}</div>
+      </div>
+    );
+  }
+
+  const { current, current_units } = weather;
+  const icon = getWeatherIcon(current.weather_code);
+  const description = getWeatherDescription(current.weather_code);
+  const windDir = getWindDirection(current.wind_direction_10m);
+
+  return (
+    <div className="bg-[var(--color-bg-secondary)] p-4 hover:brightness-110 transition-all duration-200">
+      {locationName}
+
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <div className="text-5xl font-bold tabular-nums">
+            {Math.round(current.temperature_2m)}
+            {current_units.temperature_2m}
+          </div>
+          <div className="text-sm opacity-75 mt-1">
+            Feels like {Math.round(current.apparent_temperature)}
+            {current_units.temperature_2m}
+          </div>
+        </div>
+        <div className="text-6xl">{icon}</div>
+      </div>
+
+      <div className="text-lg mb-2">{description}</div>
+
+      <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="bg-violet-950 bg-opacity-20 p-2">
+          <div className="opacity-75">Humidity</div>
+          <div className="font-bold tabular-nums">
+            {current.relative_humidity_2m}%
+          </div>
+        </div>
+        <div className="bg-violet-950 bg-opacity-20 p-2">
+          <div className="opacity-75">Wind</div>
+          <div className="font-bold tabular-nums">
+            {windDir} {Math.round(current.wind_speed_10m)}{" "}
+            {current_units.wind_speed_10m}
+          </div>
+        </div>
+        {current.precipitation > 0 && (
+          <div className="bg-violet-950 bg-opacity-20 p-2 col-span-2">
+            <div className="opacity-75">Precipitation</div>
+            <div className="font-bold tabular-nums">
+              {current.precipitation} {current_units.precipitation}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="text-xs opacity-50 mt-2 text-center">
+        Updated: {new Date(current.time).toLocaleString()}
+      </div>
+    </div>
   );
 }
+
+// =============================================================================
+// Internal Helper Functions
+// =============================================================================
 
 // WMO Weather interpretation codes
 const getWeatherDescription = (code: number): string => {
@@ -171,118 +306,3 @@ const fetchWeatherData = async (
   setCachedData(location, data);
   return data;
 };
-
-function WeatherCard({ location }: { location: WeatherLocation }) {
-  const [weather, setWeather] = useState<WeatherData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const loadWeather = async () => {
-      setLoading(true);
-      setError(null);
-
-      // Check cache first
-      const cachedData = getCachedData(location);
-      if (cachedData) {
-        setWeather(cachedData);
-        setLoading(false);
-        return;
-      }
-
-      // Fetch fresh data
-      try {
-        const data = await fetchWeatherData(location);
-        setWeather(data);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load weather data",
-        );
-        console.error("Error fetching weather:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadWeather();
-  }, [location]);
-
-  const locationName = <div className="text-xl font-bold">{location.name}</div>;
-
-  if (loading) {
-    return (
-      <div className="bg-[var(--color-bg-secondary)] p-4 text-center">
-        <div className="animate-pulse">
-          {locationName}
-          <div className="text-4xl mb-2">⏳</div>
-          <div className="text-sm opacity-75">Loading weather...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !weather) {
-    return (
-      <div className="bg-[var(--color-stopped)] p-4 text-center">
-        {locationName}
-        <div className="text-4xl mb-2">❌</div>
-        <div className="text-sm opacity-75">{error || "No data available"}</div>
-      </div>
-    );
-  }
-
-  const { current, current_units } = weather;
-  const icon = getWeatherIcon(current.weather_code);
-  const description = getWeatherDescription(current.weather_code);
-  const windDir = getWindDirection(current.wind_direction_10m);
-
-  return (
-    <div className="bg-[var(--color-bg-secondary)] p-4 hover:brightness-110 transition-all duration-200">
-      {locationName}
-
-      <div className="flex items-center justify-between mb-2">
-        <div>
-          <div className="text-5xl font-bold tabular-nums">
-            {Math.round(current.temperature_2m)}
-            {current_units.temperature_2m}
-          </div>
-          <div className="text-sm opacity-75 mt-1">
-            Feels like {Math.round(current.apparent_temperature)}
-            {current_units.temperature_2m}
-          </div>
-        </div>
-        <div className="text-6xl">{icon}</div>
-      </div>
-
-      <div className="text-lg mb-2">{description}</div>
-
-      <div className="grid grid-cols-2 gap-2 text-sm">
-        <div className="bg-violet-950 bg-opacity-20 p-2">
-          <div className="opacity-75">Humidity</div>
-          <div className="font-bold tabular-nums">
-            {current.relative_humidity_2m}%
-          </div>
-        </div>
-        <div className="bg-violet-950 bg-opacity-20 p-2">
-          <div className="opacity-75">Wind</div>
-          <div className="font-bold tabular-nums">
-            {windDir} {Math.round(current.wind_speed_10m)}{" "}
-            {current_units.wind_speed_10m}
-          </div>
-        </div>
-        {current.precipitation > 0 && (
-          <div className="bg-violet-950 bg-opacity-20 p-2 col-span-2">
-            <div className="opacity-75">Precipitation</div>
-            <div className="font-bold tabular-nums">
-              {current.precipitation} {current_units.precipitation}
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div className="text-xs opacity-50 mt-2 text-center">
-        Updated: {new Date(current.time).toLocaleString()}
-      </div>
-    </div>
-  );
-}
