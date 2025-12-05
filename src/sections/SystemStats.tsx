@@ -247,16 +247,11 @@ function NetworkCard() {
       <div className="text-lg font-semibold mb-1">Network</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {state.data.map((net) => (
-          <div key={net.interface} className="text-xs">
-            <div className="font-semibold mb-2">{net.interface}</div>
-            <div className="flex justify-between mb-1">
-              <span>↓ Download</span>
-              <span>{net.rxRate}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>↑ Upload</span>
-              <span>{net.txRate}</span>
-            </div>
+          <div key={net.interface} className="text-xs flex justify-between">
+            <span className="font-semibold">{net.interface}</span>
+            <span>
+              ↓ {net.rxRate} / ↑ {net.txRate}
+            </span>
           </div>
         ))}
       </div>
