@@ -15,7 +15,7 @@ export function ProgressBar({
   const percentage = total > 0 ? (current / total) * 100 : 0;
 
   return (
-    <div className="text-xs mb-2">
+    <div className="text-xs mb-1">
       <ProgressBarLabel label={label} value={`${current}/${total}`} />
       <ProgressBarCore percentage={percentage} color={color} />
     </div>
@@ -37,7 +37,7 @@ export function StatBar({
   color?: string;
 }) {
   return (
-    <div className="text-xs mb-2">
+    <div className="text-xs mb-1">
       <ProgressBarLabel label={label} value={value} />
       <ProgressBarCore percentage={percentage} color={color} />
     </div>

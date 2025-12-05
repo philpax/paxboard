@@ -69,14 +69,14 @@ export function SystemStats() {
           className="p-4 bg-[var(--color-bg-secondary)] hover:brightness-110 transition-all duration-200 shadow-lg cursor-pointer"
           onClick={() => setShowCPUDetail(true)}
         >
-          <div className="text-lg font-semibold mb-3">CPU</div>
+          <div className="text-lg font-semibold mb-1">CPU</div>
           <StatBar
             label="Usage"
             value={`${stats.cpu.usage.toFixed(1)}%`}
             percentage={stats.cpu.usage}
             color="bg-green-400"
           />
-          <div className="text-xs space-y-0.5">
+          <div className="text-xs">
             {stats.cpu.temperature !== null && (
               <div className="flex justify-between">
                 <span>Temperature</span>
@@ -106,7 +106,7 @@ export function SystemStats() {
 
         {/* Memory Stats */}
         <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg">
-          <div className="text-lg font-semibold mb-3">Memory</div>
+          <div className="text-lg font-semibold mb-1">Memory</div>
           <StatBar
             label="Usage"
             value={`${stats.memory.used.toFixed(1)} / ${stats.memory.total.toFixed(1)} GB`}
@@ -149,11 +149,8 @@ export function SystemStats() {
             key={index}
             className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
           >
-            <div className="text-lg font-semibold mb-3">
-              GPU {stats.gpus.length > 1 ? index : ""}
-            </div>
-            <div className="text-sm text-[var(--color-secondary)] mb-2">
-              {gpu.name}
+            <div className="text-lg font-semibold mb-1">
+              GPU {stats.gpus.length > 1 ? index : ""}: {gpu.name}
             </div>
             <StatBar
               label="Utilization"
@@ -167,7 +164,7 @@ export function SystemStats() {
               percentage={gpu.memoryUsage}
               color="bg-pink-400"
             />
-            <div className="text-xs mb-2">
+            <div className="text-xs">
               <div className="flex justify-between">
                 <span>Temperature</span>
                 <span>{gpu.temperature.toFixed(0)}°C</span>
@@ -187,7 +184,7 @@ export function SystemStats() {
         {/* Network Stats */}
         {stats.network.length > 0 && (
           <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
-            <div className="text-lg font-semibold mb-3">Network</div>
+            <div className="text-lg font-semibold mb-1">Network</div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {stats.network.map((net) => (
                 <div key={net.interface} className="text-xs">
