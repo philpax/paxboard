@@ -124,9 +124,8 @@ function CPUCard({ onShowDetail }: { onShowDetail: () => void }) {
           <div className="flex justify-between">
             <span>Top Clock</span>
             <span>
-              Core{" "}
-              {[...stats.coreStats].sort((a, b) => b.mhz - a.mhz)[0].core} @{" "}
-              {[...stats.coreStats].sort((a, b) => b.mhz - a.mhz)[0].mhz} MHz
+              Core {[...stats.coreStats].sort((a, b) => b.mhz - a.mhz)[0].core}{" "}
+              @ {[...stats.coreStats].sort((a, b) => b.mhz - a.mhz)[0].mhz} MHz
             </span>
           </div>
         )}
@@ -213,33 +212,26 @@ function GPUCards() {
 function DiskCards() {
   const state = useStatFetcher<DiskStats[]>("/api/stats/disks");
 
-  if (state.loading) return <StatCardLoading title="Disk" />;
+  if (state.loading) return <StatCardLoading title="Disks" />;
   if (state.error || !state.data) return null;
   if (state.data.length === 0) return null;
 
   return (
-    <>
-      {state.data.map((disk) => (
-        <div
-          key={disk.path}
-          className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
-        >
-          <div className="text-lg font-semibold mb-1">Disk ({disk.path})</div>
-          <StatBar
-            label="Usage"
-            value={`${disk.used.toFixed(1)} / ${disk.total.toFixed(1)} GB`}
-            percentage={disk.usage}
-            color="bg-orange-400"
-          />
-          <div className="text-xs">
-            <div className="flex justify-between">
-              <span>Available</span>
-              <span>{disk.available.toFixed(1)} GB</span>
-            </div>
+    <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
+      <div className="text-lg font-semibold mb-1">Disks</div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {state.data.map((disk) => (
+          <div key={disk.path}>
+            <StatBar
+              label={disk.path}
+              value={`${disk.used.toFixed(1)} / ${disk.total.toFixed(1)} GB (${disk.available.toFixed(1)} GB available)`}
+              percentage={disk.usage}
+              color="bg-orange-400"
+            />
           </div>
-        </div>
-      ))}
-    </>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -295,7 +287,9 @@ function CPUDetailPopover({ onClose }: { onClose: () => void }) {
         </div>
 
         {state.loading && (
-          <div className="text-sm text-[var(--color-secondary)]">Loading...</div>
+          <div className="text-sm text-[var(--color-secondary)]">
+            Loading...
+          </div>
         )}
 
         {state.error && (
