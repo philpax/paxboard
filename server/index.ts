@@ -10,7 +10,6 @@ import type {
   DiskStats,
   GPUStats,
   NetworkStats,
-  SystemStats,
 } from "../shared/types";
 
 const execAsync = promisify(exec);
@@ -25,30 +24,54 @@ const isDev = process.env.NODE_ENV !== "production";
 // Server Setup & API Routes (Public Interface)
 // =============================================================================
 
-// API endpoint for system stats
-app.get("/api/system-stats", async (req, res) => {
+// Individual API endpoints for each stat type
+app.get("/api/stats/cpu", async (req, res) => {
   try {
-    const [cpu, memory, disks, gpus, network] = await Promise.all([
-      getCPUStats(),
-      getMemoryStats(),
-      getDiskStats(),
-      getGPUStats(),
-      getNetworkStats(),
-    ]);
-
-    const stats: SystemStats = {
-      cpu,
-      memory,
-      disks,
-      gpus,
-      network,
-      timestamp: Date.now(),
-    };
-
-    res.json(stats);
+    const cpu = await getCPUStats();
+    res.json(cpu);
   } catch (error) {
-    console.error("Error gathering system stats:", error);
-    res.status(500).json({ error: "Failed to gather system stats" });
+    console.error("Error getting CPU stats:", error);
+    res.status(500).json({ error: "Failed to get CPU stats" });
+  }
+});
+
+app.get("/api/stats/memory", async (req, res) => {
+  try {
+    const memory = await getMemoryStats();
+    res.json(memory);
+  } catch (error) {
+    console.error("Error getting memory stats:", error);
+    res.status(500).json({ error: "Failed to get memory stats" });
+  }
+});
+
+app.get("/api/stats/disks", async (req, res) => {
+  try {
+    const disks = await getDiskStats();
+    res.json(disks);
+  } catch (error) {
+    console.error("Error getting disk stats:", error);
+    res.status(500).json({ error: "Failed to get disk stats" });
+  }
+});
+
+app.get("/api/stats/gpus", async (req, res) => {
+  try {
+    const gpus = await getGPUStats();
+    res.json(gpus);
+  } catch (error) {
+    console.error("Error getting GPU stats:", error);
+    res.status(500).json({ error: "Failed to get GPU stats" });
+  }
+});
+
+app.get("/api/stats/network", async (req, res) => {
+  try {
+    const network = await getNetworkStats();
+    res.json(network);
+  } catch (error) {
+    console.error("Error getting network stats:", error);
+    res.status(500).json({ error: "Failed to get network stats" });
   }
 });
 
