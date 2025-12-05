@@ -121,28 +121,6 @@ export function SystemStats() {
           </div>
         </div>
 
-        {/* Disk Stats */}
-        {stats.disks.map((disk) => (
-          <div
-            key={disk.path}
-            className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
-          >
-            <div className="text-lg font-semibold mb-3">Disk ({disk.path})</div>
-            <StatBar
-              label="Usage"
-              value={`${disk.used.toFixed(1)} / ${disk.total.toFixed(1)} GB`}
-              percentage={disk.usage}
-              color="bg-orange-400"
-            />
-            <div className="text-xs">
-              <div className="flex justify-between">
-                <span>Available</span>
-                <span>{disk.available.toFixed(1)} GB</span>
-              </div>
-            </div>
-          </div>
-        ))}
-
         {/* GPU Stats */}
         {stats.gpus.map((gpu, index) => (
           <div
@@ -176,6 +154,28 @@ export function SystemStats() {
                 <span>
                   {gpu.powerDraw.toFixed(0)} / {gpu.powerLimit.toFixed(0)} W
                 </span>
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Disk Stats */}
+        {stats.disks.map((disk) => (
+          <div
+            key={disk.path}
+            className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
+          >
+            <div className="text-lg font-semibold mb-1">Disk ({disk.path})</div>
+            <StatBar
+              label="Usage"
+              value={`${disk.used.toFixed(1)} / ${disk.total.toFixed(1)} GB`}
+              percentage={disk.usage}
+              color="bg-orange-400"
+            />
+            <div className="text-xs">
+              <div className="flex justify-between">
+                <span>Available</span>
+                <span>{disk.available.toFixed(1)} GB</span>
               </div>
             </div>
           </div>
