@@ -5,7 +5,6 @@ export function LocalServices() {
   const services: { name: string; url: string }[] = [
     { name: "jellyfin", url: `${config.baseUrl}:8096` },
     { name: "navidrome", url: `${config.baseUrl}:4533` },
-    { name: "plex", url: `${config.baseUrl}:32400` },
     { name: "redlib", url: `${config.baseUrl}:10000` },
     { name: "immich", url: `${config.baseUrl}:2283` },
   ];
