@@ -1,3 +1,0 @@
-[submodule "vendor/inspect.lua"]
-	path = vendor/inspect.lua
-	url = https://github.com/kikito/inspect.lua.git
