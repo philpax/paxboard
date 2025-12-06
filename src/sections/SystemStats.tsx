@@ -1,13 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { SectionHeader } from "../components/SectionHeader";
 import { StatBar, ProgressBarCore } from "../components/ProgressBar";
-import type {
-  CPUStats,
-  MemoryStats,
-  DiskStats,
-  GPUStats,
-  NetworkStats,
-} from "../../shared/types";
+import { useStats } from "../hooks/StatsContext.ts";
 
 // =============================================================================
 // Exported Component
@@ -38,43 +32,6 @@ export function SystemStats() {
 // Implementation Details
 // =============================================================================
 
-type StatState<T> = {
-  data: T | null;
-  loading: boolean;
-  error: boolean;
-};
-
-function useStatFetcher<T>(endpoint: string, interval = 2000): StatState<T> {
-  const [state, setState] = useState<StatState<T>>({
-    data: null,
-    loading: true,
-    error: false,
-  });
-
-  const fetchData = useCallback(() => {
-    fetch(endpoint)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch");
-        return res.json();
-      })
-      .then((data) => {
-        setState({ data, loading: false, error: false });
-      })
-      .catch((err) => {
-        console.error(`Failed to fetch ${endpoint}:`, err);
-        setState((prev) => ({ ...prev, loading: false, error: true }));
-      });
-  }, [endpoint]);
-
-  useEffect(() => {
-    fetchData();
-    const intervalId = setInterval(fetchData, interval);
-    return () => clearInterval(intervalId);
-  }, [fetchData, interval]);
-
-  return state;
-}
-
 function StatCardLoading({ title }: { title: string }) {
   return (
     <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg animate-pulse">
@@ -85,22 +42,10 @@ function StatCardLoading({ title }: { title: string }) {
   );
 }
 
-function StatCardError({ title }: { title: string }) {
-  return (
-    <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg opacity-50">
-      <div className="text-lg font-semibold mb-1">{title}</div>
-      <div className="text-xs text-[var(--color-secondary)]">Unavailable</div>
-    </div>
-  );
-}
-
 function CPUCard({ onShowDetail }: { onShowDetail: () => void }) {
-  const state = useStatFetcher<CPUStats>("/api/stats/cpu");
+  const { cpu: stats } = useStats();
 
-  if (state.loading) return <StatCardLoading title="CPU" />;
-  if (state.error || !state.data) return <StatCardError title="CPU" />;
-
-  const stats = state.data;
+  if (!stats) return <StatCardLoading title="CPU" />;
   return (
     <div
       className="p-4 bg-[var(--color-bg-secondary)] hover:brightness-110 transition-all duration-200 shadow-lg cursor-pointer"
@@ -135,12 +80,9 @@ function CPUCard({ onShowDetail }: { onShowDetail: () => void }) {
 }
 
 function MemoryCard() {
-  const state = useStatFetcher<MemoryStats>("/api/stats/memory");
+  const { memory: stats } = useStats();
 
-  if (state.loading) return <StatCardLoading title="Memory" />;
-  if (state.error || !state.data) return <StatCardError title="Memory" />;
-
-  const stats = state.data;
+  if (!stats) return <StatCardLoading title="Memory" />;
   return (
     <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg">
       <div className="text-lg font-semibold mb-1">Memory</div>
@@ -161,21 +103,20 @@ function MemoryCard() {
 }
 
 function GPUCards() {
-  const state = useStatFetcher<GPUStats[]>("/api/stats/gpus");
+  const { gpus } = useStats();
 
-  if (state.loading) return <StatCardLoading title="GPU" />;
-  if (state.error || !state.data) return null;
-  if (state.data.length === 0) return null;
+  if (!gpus) return <StatCardLoading title="GPU" />;
+  if (gpus.length === 0) return null;
 
   return (
     <>
-      {state.data.map((gpu, index) => (
+      {gpus.map((gpu, index) => (
         <div
           key={index}
           className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
         >
           <div className="text-lg font-semibold mb-1">
-            GPU {state.data!.length > 1 ? index : ""}: {gpu.name}
+            GPU {gpus.length > 1 ? index : ""}: {gpu.name}
           </div>
           <StatBar
             label="Utilization"
@@ -210,17 +151,16 @@ function GPUCards() {
 }
 
 function DiskCards() {
-  const state = useStatFetcher<DiskStats[]>("/api/stats/disks");
+  const { disks } = useStats();
 
-  if (state.loading) return <StatCardLoading title="Disks" />;
-  if (state.error || !state.data) return null;
-  if (state.data.length === 0) return null;
+  if (!disks) return <StatCardLoading title="Disks" />;
+  if (disks.length === 0) return null;
 
   return (
     <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
       <div className="text-lg font-semibold mb-1">Disks</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {state.data.map((disk) => (
+        {disks.map((disk) => (
           <div key={disk.path}>
             <StatBar
               label={disk.path}
@@ -236,17 +176,16 @@ function DiskCards() {
 }
 
 function NetworkCard() {
-  const state = useStatFetcher<NetworkStats[]>("/api/stats/network");
+  const { network } = useStats();
 
-  if (state.loading) return <StatCardLoading title="Network" />;
-  if (state.error || !state.data) return null;
-  if (state.data.length === 0) return null;
+  if (!network) return <StatCardLoading title="Network" />;
+  if (network.length === 0) return null;
 
   return (
     <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
       <div className="text-lg font-semibold mb-1">Network</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {state.data.map((net) => (
+        {network.map((net) => (
           <div key={net.interface} className="text-xs flex justify-between">
             <span className="font-semibold">{net.interface}</span>
             <span>
@@ -260,7 +199,7 @@ function NetworkCard() {
 }
 
 function CPUDetailPopover({ onClose }: { onClose: () => void }) {
-  const state = useStatFetcher<CPUStats>("/api/stats/cpu");
+  const { cpu: stats } = useStats();
 
   return (
     <div
@@ -281,42 +220,36 @@ function CPUDetailPopover({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {state.loading && (
+        {!stats && (
           <div className="text-sm text-[var(--color-secondary)]">
             Loading...
           </div>
         )}
 
-        {state.error && (
-          <div className="text-sm text-[var(--color-secondary)]">
-            Failed to load CPU details
-          </div>
-        )}
-
-        {state.data && (
+        {stats && (
           <>
             <div className="mb-4">
               <StatBar
                 label="Total Usage"
-                value={`${state.data.usage.toFixed(1)}%`}
-                percentage={state.data.usage}
+                value={`${stats.usage.toFixed(1)}%`}
+                percentage={stats.usage}
                 color="bg-green-400"
               />
-              {state.data.temperature !== null && (
+              {stats.temperature !== null && (
                 <div className="text-xs mb-2">
                   <div className="flex justify-between">
                     <span>Temperature</span>
-                    <span>{state.data.temperature.toFixed(1)}°C</span>
+                    <span>{stats.temperature.toFixed(1)}°C</span>
                   </div>
                 </div>
               )}
             </div>
 
             <div className="text-sm font-semibold mb-2">
-              Per-Core Stats ({state.data.cores} cores)
+              Per-Core Stats ({stats.cores} cores)
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              {state.data.coreStats.map((core) => (
+              {stats.coreStats.map((core) => (
                 <div
                   key={core.core}
                   className="p-2 bg-[var(--color-bg-secondary)]"

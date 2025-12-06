@@ -1,4 +1,6 @@
 import express from "express";
+import { createServer } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { exec } from "child_process";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
@@ -10,6 +12,7 @@ import type {
   DiskStats,
   GPUStats,
   NetworkStats,
+  StatsMessage,
 } from "../shared/types";
 
 const execAsync = promisify(exec);
@@ -17,75 +20,82 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 const app = express();
+const server = createServer(app);
+const wss = new WebSocketServer({ server, path: "/ws/stats" });
 const PORT = 1729;
 const isDev = process.env.NODE_ENV !== "production";
 
 // =============================================================================
-// Server Setup & API Routes (Public Interface)
+// Server Setup & WebSocket Stats Streaming
 // =============================================================================
 
-// Individual API endpoints for each stat type
-app.get("/api/stats/cpu", async (req, res) => {
-  try {
-    const cpu = await getCPUStats();
-    res.json(cpu);
-  } catch (error) {
-    console.error("Error getting CPU stats:", error);
-    res.status(500).json({ error: "Failed to get CPU stats" });
-  }
+// Track active WebSocket connections
+const clients = new Set<WebSocket>();
+
+wss.on("connection", (ws) => {
+  clients.add(ws);
+  console.log(`WebSocket client connected (${clients.size} total)`);
+
+  ws.on("close", () => {
+    clients.delete(ws);
+    console.log(`WebSocket client disconnected (${clients.size} total)`);
+  });
+
+  ws.on("error", (err) => {
+    console.error("WebSocket error:", err);
+    clients.delete(ws);
+  });
 });
 
-app.get("/api/stats/memory", async (req, res) => {
-  try {
-    const memory = await getMemoryStats();
-    res.json(memory);
-  } catch (error) {
-    console.error("Error getting memory stats:", error);
-    res.status(500).json({ error: "Failed to get memory stats" });
+// Broadcast a message to all connected clients
+function broadcast(message: StatsMessage) {
+  const data = JSON.stringify(message);
+  for (const client of clients) {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(data);
+    }
   }
-});
+}
 
-app.get("/api/stats/disks", async (req, res) => {
-  try {
-    const disks = await getDiskStats();
-    res.json(disks);
-  } catch (error) {
-    console.error("Error getting disk stats:", error);
-    res.status(500).json({ error: "Failed to get disk stats" });
-  }
-});
+// Start streaming stats to connected clients
+function startStatsStreaming() {
+  // Each stat type runs independently and broadcasts when ready
+  const INTERVAL = 2000;
 
-app.get("/api/stats/gpus", async (req, res) => {
-  try {
-    const gpus = await getGPUStats();
-    res.json(gpus);
-  } catch (error) {
-    console.error("Error getting GPU stats:", error);
-    res.status(500).json({ error: "Failed to get GPU stats" });
+  async function streamStat<T>(
+    name: StatsMessage["type"],
+    fetcher: () => Promise<T>,
+  ) {
+    while (true) {
+      if (clients.size > 0) {
+        try {
+          const data = await fetcher();
+          broadcast({ type: name, data } as StatsMessage);
+        } catch (err) {
+          console.error(`Error fetching ${name}:`, err);
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, INTERVAL));
+    }
   }
-});
 
-app.get("/api/stats/network", async (req, res) => {
-  try {
-    const network = await getNetworkStats();
-    res.json(network);
-  } catch (error) {
-    console.error("Error getting network stats:", error);
-    res.status(500).json({ error: "Failed to get network stats" });
-  }
-});
+  streamStat("cpu", getCPUStats);
+  streamStat("memory", getMemoryStats);
+  streamStat("disks", getDiskStats);
+  streamStat("gpus", getGPUStats);
+  streamStat("network", getNetworkStats);
+  streamStat("aiServices", getAIServicesStatus);
+}
 
 // Fetch AI services status from large-model-proxy
-app.get("/api/ai-services-status", async (req, res) => {
+async function getAIServicesStatus() {
   try {
     const response = await fetch("http://redline:7071/status");
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    console.error("Error fetching AI services status:", error);
-    res.status(503).json({ error: "AI services unavailable" });
+    return await response.json();
+  } catch {
+    return null;
   }
-});
+}
 
 // Setup Vite or static file serving
 async function setupServer() {
@@ -113,9 +123,10 @@ async function setupServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  server.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${PORT}`);
     console.log(`Mode: ${isDev ? "development" : "production"}`);
+    startStatsStreaming();
   });
 }
 

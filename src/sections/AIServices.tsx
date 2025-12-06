@@ -1,53 +1,23 @@
-import { useState, useEffect } from "react";
 import { ProgressBar, ProgressBarCore } from "../components/ProgressBar";
 import { config } from "../config";
 import { SectionHeader } from "../components/SectionHeader";
-import type {
-  AIResourceStatus,
-  AIServiceStatus,
-  AIServicesStatus,
-} from "../../shared/types";
+import { useStats } from "../hooks/StatsContext.ts";
+import type { AIResourceStatus, AIServiceStatus } from "../../shared/types";
 
 // =============================================================================
 // Exported Component
 // =============================================================================
 
 export function AIServices() {
-  const [proxyStatus, setProxyStatus] = useState<AIServicesStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-
+  const { aiServices: proxyStatus } = useStats();
   const lmpServiceUrl = `${config.baseUrl}:7071`;
-
-  useEffect(() => {
-    fetch("/api/ai-services-status")
-      .then((res) => res.json())
-      .then((data) => {
-        setProxyStatus(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Failed to fetch proxy status:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  if (loading) {
-    return (
-      <section>
-        <h2 className="text-2xl font-semibold mb-2 text-center">ai services</h2>
-        <div className="text-sm text-[var(--color-secondary)] text-center">
-          Loading...
-        </div>
-      </section>
-    );
-  }
 
   if (!proxyStatus) {
     return (
       <section>
-        <h2 className="text-2xl font-semibold mb-2 text-center">ai services</h2>
+        <SectionHeader title="ai services" />
         <div className="text-sm text-[var(--color-secondary)] text-center">
-          Status unavailable
+          Loading...
         </div>
       </section>
     );

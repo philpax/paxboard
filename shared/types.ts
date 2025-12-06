@@ -72,3 +72,12 @@ export interface AIServicesStatus {
   resources: Record<string, AIResourceStatus>;
   services: AIServiceStatus[];
 }
+
+// WebSocket message types
+export type StatsMessage =
+  | { type: "cpu"; data: CPUStats }
+  | { type: "memory"; data: MemoryStats }
+  | { type: "disks"; data: DiskStats[] }
+  | { type: "gpus"; data: GPUStats[] }
+  | { type: "network"; data: NetworkStats[] }
+  | { type: "aiServices"; data: AIServicesStatus | null };
