@@ -159,7 +159,7 @@ function DiskCards() {
   return (
     <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
       <div className="text-lg font-semibold mb-1">Disks</div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
         {disks.map((disk) => (
           <div key={disk.path}>
             <StatBar
@@ -184,7 +184,7 @@ function NetworkCard() {
   return (
     <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
       <div className="text-lg font-semibold mb-1">Network</div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
         {network.map((net) => (
           <div key={net.interface} className="text-xs flex justify-between">
             <span className="font-semibold">{net.interface}</span>

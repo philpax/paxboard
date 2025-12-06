@@ -59,7 +59,7 @@ export function ProgressBarLabel({
   value: string;
 }) {
   return (
-    <div className="flex justify-between mb-1">
+    <div className="flex justify-between mb-0.5">
       <span>{label}</span>
       <span>{value}</span>
     </div>
