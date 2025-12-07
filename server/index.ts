@@ -12,6 +12,7 @@ import type {
   DiskStats,
   GPUStats,
   NetworkStats,
+  ProcessStats,
   StatsMessage,
 } from "../shared/types";
 
@@ -32,25 +33,46 @@ const isDev = process.env.NODE_ENV !== "production";
 // Track active WebSocket connections
 const clients = new Set<WebSocket>();
 
+// Track clients that want process stats
+const processStatsClients = new Set<WebSocket>();
+
 wss.on("connection", (ws) => {
   clients.add(ws);
   console.log(`WebSocket client connected (${clients.size} total)`);
 
+  ws.on("message", (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+      if (message.type === "subscribe" && message.channel === "processes") {
+        processStatsClients.add(ws);
+      } else if (
+        message.type === "unsubscribe" &&
+        message.channel === "processes"
+      ) {
+        processStatsClients.delete(ws);
+      }
+    } catch {
+      // Ignore invalid messages
+    }
+  });
+
   ws.on("close", () => {
     clients.delete(ws);
+    processStatsClients.delete(ws);
     console.log(`WebSocket client disconnected (${clients.size} total)`);
   });
 
   ws.on("error", (err) => {
     console.error("WebSocket error:", err);
     clients.delete(ws);
+    processStatsClients.delete(ws);
   });
 });
 
 // Broadcast a message to all connected clients
-function broadcast(message: StatsMessage) {
+function broadcast(message: StatsMessage, targetClients = clients) {
   const data = JSON.stringify(message);
-  for (const client of clients) {
+  for (const client of targetClients) {
     if (client.readyState === WebSocket.OPEN) {
       client.send(data);
     }
@@ -85,6 +107,21 @@ function startStatsStreaming() {
   streamStat("gpus", getGPUStats);
   streamStat("network", getNetworkStats);
   streamStat("aiServices", getAIServicesStatus);
+
+  // Process stats only stream to subscribed clients
+  (async () => {
+    while (true) {
+      if (processStatsClients.size > 0) {
+        try {
+          const data = await getProcessStats();
+          broadcast({ type: "processes", data }, processStatsClients);
+        } catch (err) {
+          console.error("Error fetching processes:", err);
+        }
+      }
+      await new Promise((resolve) => setTimeout(resolve, INTERVAL));
+    }
+  })();
 }
 
 // Fetch AI services status from large-model-proxy
@@ -419,4 +456,41 @@ function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024 * 1024)
     return (bytes / 1024 / 1024).toFixed(1) + " MB";
   return (bytes / 1024 / 1024 / 1024).toFixed(1) + " GB";
+}
+
+// Get top processes by memory usage
+async function getProcessStats(): Promise<ProcessStats[]> {
+  try {
+    // Get top 20 processes sorted by memory usage
+    const { stdout } = await execAsync(
+      "ps aux --sort=-%mem | head -21 | tail -20",
+    );
+    const lines = stdout.trim().split("\n");
+    const processes: ProcessStats[] = [];
+
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      if (parts.length >= 11) {
+        const pid = parseInt(parts[1]);
+        const memPercent = parseFloat(parts[3]);
+        // RSS is in KB (column 5, index 5)
+        const rssKB = parseInt(parts[5]);
+        const memoryMB = Math.round((rssKB / 1024) * 10) / 10;
+        // Command is everything from column 10 onwards
+        const name = parts.slice(10).join(" ");
+
+        processes.push({
+          pid,
+          name,
+          memoryMB,
+          memoryPercent: Math.round(memPercent * 10) / 10,
+        });
+      }
+    }
+
+    return processes;
+  } catch (error) {
+    console.error("Error getting process stats:", error);
+    return [];
+  }
 }

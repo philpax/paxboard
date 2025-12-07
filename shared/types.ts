@@ -46,6 +46,13 @@ export interface NetworkStats {
   txRate: string;
 }
 
+export interface ProcessStats {
+  pid: number;
+  name: string;
+  memoryMB: number;
+  memoryPercent: number;
+}
+
 export interface SystemStats {
   cpu: CPUStats;
   memory: MemoryStats;
@@ -80,4 +87,5 @@ export type StatsMessage =
   | { type: "disks"; data: DiskStats[] }
   | { type: "gpus"; data: GPUStats[] }
   | { type: "network"; data: NetworkStats[] }
-  | { type: "aiServices"; data: AIServicesStatus | null };
+  | { type: "aiServices"; data: AIServicesStatus | null }
+  | { type: "processes"; data: ProcessStats[] };

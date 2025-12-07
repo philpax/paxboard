@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SectionHeader } from "../components/SectionHeader";
 import { StatBar, ProgressBarCore } from "../components/ProgressBar";
 import { useStats } from "../hooks/StatsContext.ts";
@@ -9,13 +9,14 @@ import { useStats } from "../hooks/StatsContext.ts";
 
 export function SystemStats() {
   const [showCPUDetail, setShowCPUDetail] = useState(false);
+  const [showMemoryDetail, setShowMemoryDetail] = useState(false);
 
   return (
     <section>
       <SectionHeader title="system stats" />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
         <CPUCard onShowDetail={() => setShowCPUDetail(true)} />
-        <MemoryCard />
+        <MemoryCard onShowDetail={() => setShowMemoryDetail(true)} />
         <GPUCards />
         <DiskCards />
         <NetworkCard />
@@ -24,6 +25,9 @@ export function SystemStats() {
       {showCPUDetail && (
         <CPUDetailPopover onClose={() => setShowCPUDetail(false)} />
       )}
+      {showMemoryDetail && (
+        <MemoryDetailPopover onClose={() => setShowMemoryDetail(false)} />
+      )}
     </section>
   );
 }
@@ -31,6 +35,16 @@ export function SystemStats() {
 // =============================================================================
 // Implementation Details
 // =============================================================================
+
+function getProcessDisplayName(fullName: string): string {
+  // Extract just the executable name from the full command path
+  const parts = fullName.split(" ");
+  const executable = parts[0];
+  // Get the basename (last part after /)
+  const basename = executable.split("/").pop() || executable;
+  // Return basename + any arguments
+  return parts.length > 1 ? `${basename} ${parts.slice(1).join(" ")}` : basename;
+}
 
 function StatCardLoading({ title }: { title: string }) {
   return (
@@ -79,12 +93,15 @@ function CPUCard({ onShowDetail }: { onShowDetail: () => void }) {
   );
 }
 
-function MemoryCard() {
+function MemoryCard({ onShowDetail }: { onShowDetail: () => void }) {
   const { memory: stats } = useStats();
 
   if (!stats) return <StatCardLoading title="Memory" />;
   return (
-    <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg">
+    <div
+      className="p-4 bg-[var(--color-bg-secondary)] hover:brightness-110 transition-all duration-200 shadow-lg cursor-pointer"
+      onClick={onShowDetail}
+    >
       <div className="text-lg font-semibold mb-1">Memory</div>
       <StatBar
         label="Usage"
@@ -198,9 +215,15 @@ function NetworkCard() {
   );
 }
 
-function CPUDetailPopover({ onClose }: { onClose: () => void }) {
-  const { cpu: stats } = useStats();
-
+function DetailPopover({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
@@ -211,7 +234,7 @@ function CPUDetailPopover({ onClose }: { onClose: () => void }) {
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
-          <div className="text-lg font-semibold">CPU Details</div>
+          <div className="text-lg font-semibold">{title}</div>
           <button
             onClick={onClose}
             className="text-[var(--color-secondary)] hover:text-[var(--color-primary)]"
@@ -219,59 +242,138 @@ function CPUDetailPopover({ onClose }: { onClose: () => void }) {
             [x]
           </button>
         </div>
+        {children}
+      </div>
+    </div>
+  );
+}
 
-        {!stats && (
-          <div className="text-sm text-[var(--color-secondary)]">
-            Loading...
-          </div>
-        )}
+function CPUDetailPopover({ onClose }: { onClose: () => void }) {
+  const { cpu: stats } = useStats();
 
-        {stats && (
-          <>
-            <div className="mb-4">
-              <StatBar
-                label="Total Usage"
-                value={`${stats.usage.toFixed(1)}%`}
-                percentage={stats.usage}
-                color="bg-green-400"
-              />
-              {stats.temperature !== null && (
-                <div className="text-xs mb-2">
-                  <div className="flex justify-between">
-                    <span>Temperature</span>
-                    <span>{stats.temperature.toFixed(1)}°C</span>
-                  </div>
+  return (
+    <DetailPopover title="CPU Details" onClose={onClose}>
+      {!stats && (
+        <div className="text-sm text-[var(--color-secondary)]">Loading...</div>
+      )}
+
+      {stats && (
+        <>
+          <div className="mb-4">
+            <StatBar
+              label="Total Usage"
+              value={`${stats.usage.toFixed(1)}%`}
+              percentage={stats.usage}
+              color="bg-green-400"
+            />
+            {stats.temperature !== null && (
+              <div className="text-xs mb-2">
+                <div className="flex justify-between">
+                  <span>Temperature</span>
+                  <span>{stats.temperature.toFixed(1)}°C</span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            <div className="text-sm font-semibold mb-2">
-              Per-Core Stats ({stats.cores} cores)
+          <div className="text-sm font-semibold mb-2">
+            Per-Core Stats ({stats.cores} cores)
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            {stats.coreStats.map((core) => (
+              <div
+                key={core.core}
+                className="p-2 bg-[var(--color-bg-secondary)]"
+              >
+                <div className="flex justify-between mb-1">
+                  <span className="font-semibold">Core {core.core}</span>
+                  <span>{core.mhz} MHz</span>
+                </div>
+                <ProgressBarCore
+                  percentage={core.usage}
+                  color="bg-green-400"
+                  height="h-1.5"
+                />
+                <div className="text-right text-[var(--color-secondary)] mt-0.5">
+                  {core.usage.toFixed(1)}%
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+    </DetailPopover>
+  );
+}
+
+function MemoryDetailPopover({ onClose }: { onClose: () => void }) {
+  const { memory, processes, subscribe, unsubscribe } = useStats();
+
+  useEffect(() => {
+    subscribe("processes");
+    return () => unsubscribe("processes");
+  }, [subscribe, unsubscribe]);
+
+  return (
+    <DetailPopover title="Memory Details" onClose={onClose}>
+      {!memory && (
+        <div className="text-sm text-[var(--color-secondary)]">Loading...</div>
+      )}
+
+      {memory && (
+        <>
+          <div className="mb-4">
+            <StatBar
+              label="Usage"
+              value={`${memory.used.toFixed(1)} / ${memory.total.toFixed(1)} GB`}
+              percentage={memory.usage}
+              color="bg-purple-400"
+            />
+            <div className="text-xs">
+              <div className="flex justify-between">
+                <span>Available</span>
+                <span>{memory.available.toFixed(1)} GB</span>
+              </div>
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              {stats.coreStats.map((core) => (
+          </div>
+
+          <div className="text-sm font-semibold mb-2">
+            Top Processes by Memory
+          </div>
+          {!processes && (
+            <div className="text-sm text-[var(--color-secondary)]">
+              Loading processes...
+            </div>
+          )}
+          {processes && processes.length > 0 && (
+            <div className="text-xs space-y-1">
+              {processes.map((proc) => (
                 <div
-                  key={core.core}
-                  className="p-2 bg-[var(--color-bg-secondary)]"
+                  key={proc.pid}
+                  className="flex items-center gap-2 p-1 bg-[var(--color-bg-secondary)]"
                 >
-                  <div className="flex justify-between mb-1">
-                    <span className="font-semibold">Core {core.core}</span>
-                    <span>{core.mhz} MHz</span>
+                  <div className="w-16 text-right text-[var(--color-secondary)]">
+                    {proc.memoryMB.toFixed(0)} MB
                   </div>
-                  <ProgressBarCore
-                    percentage={core.usage}
-                    color="bg-green-400"
-                    height="h-1.5"
-                  />
-                  <div className="text-right text-[var(--color-secondary)] mt-0.5">
-                    {core.usage.toFixed(1)}%
+                  <div className="w-12">
+                    <ProgressBarCore
+                      percentage={proc.memoryPercent}
+                      color="bg-purple-400"
+                      height="h-1.5"
+                    />
+                  </div>
+                  <div className="flex-1 truncate" title={proc.name}>
+                    {getProcessDisplayName(proc.name)}
+                  </div>
+                  <div className="text-[var(--color-secondary)] w-10 text-right">
+                    {proc.memoryPercent.toFixed(1)}%
                   </div>
                 </div>
               ))}
             </div>
-          </>
-        )}
-      </div>
-    </div>
+          )}
+        </>
+      )}
+    </DetailPopover>
   );
 }

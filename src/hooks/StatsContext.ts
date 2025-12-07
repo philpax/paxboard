@@ -5,6 +5,7 @@ import type {
   DiskStats,
   GPUStats,
   NetworkStats,
+  ProcessStats,
   AIServicesStatus,
 } from "../../shared/types";
 
@@ -14,8 +15,11 @@ export interface StatsState {
   disks: DiskStats[] | null;
   gpus: GPUStats[] | null;
   network: NetworkStats[] | null;
+  processes: ProcessStats[] | null;
   aiServices: AIServicesStatus | null;
   connected: boolean;
+  subscribe: (channel: string) => void;
+  unsubscribe: (channel: string) => void;
 }
 
 export const StatsContext = createContext<StatsState>({
@@ -24,8 +28,11 @@ export const StatsContext = createContext<StatsState>({
   disks: null,
   gpus: null,
   network: null,
+  processes: null,
   aiServices: null,
   connected: false,
+  subscribe: () => {},
+  unsubscribe: () => {},
 });
 
 export function useStats() {
