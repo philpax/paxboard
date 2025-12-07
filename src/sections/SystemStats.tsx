@@ -43,7 +43,9 @@ function getProcessDisplayName(fullName: string): string {
   // Get the basename (last part after /)
   const basename = executable.split("/").pop() || executable;
   // Return basename + any arguments
-  return parts.length > 1 ? `${basename} ${parts.slice(1).join(" ")}` : basename;
+  return parts.length > 1
+    ? `${basename} ${parts.slice(1).join(" ")}`
+    : basename;
 }
 
 function StatCardLoading({ title }: { title: string }) {
