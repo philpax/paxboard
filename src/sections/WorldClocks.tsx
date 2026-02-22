@@ -114,7 +114,7 @@ export function WorldClocks() {
         {clocks.map((clock) => (
           <div
             key={clock.timezone}
-            className="bg-[var(--color-bg-secondary)] p-2 hover:brightness-125 transition-all duration-200 flex-grow-1 flex flex-col items-center cursor-pointer relative"
+            className="bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg p-2 hover:bg-[var(--color-glass-hover)] hover:brightness-110 transition-all duration-200 flex-grow-1 flex flex-col items-center cursor-pointer relative"
             onClick={() => handleClockClick(clock.timezone)}
             title="Click to copy ISO8601 time"
           >

@@ -36,7 +36,7 @@ export function AIServices() {
           href={lmpServiceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block p-4 bg-[var(--color-bg-secondary)] hover:brightness-125 transition-all duration-200 transform shadow-lg mb-2"
+          className="block p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg hover:bg-[var(--color-glass-hover)] hover:brightness-110 transition-all duration-200 transform mb-2"
         >
           <div className="text-xl font-semibold">large-model-proxy</div>
           <div className="text-[var(--color-secondary)] text-sm mb-2">
@@ -82,8 +82,8 @@ function ServiceTile({
   resources: Record<string, AIResourceStatus>;
 }) {
   const bgColor = service.is_running
-    ? "bg-[var(--color-bg-secondary)]"
-    : "bg-[var(--color-stopped)]";
+    ? "bg-[var(--color-glass)] backdrop-blur-md border border-white/10"
+    : "bg-[var(--color-glass-stopped)] backdrop-blur-md border border-white/10";
 
   const resourceEntries = Object.entries(service.resource_requirements).sort(
     ([a], [b]) => a.localeCompare(b),

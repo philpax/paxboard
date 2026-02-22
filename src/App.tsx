@@ -4,11 +4,13 @@ import Weather from "./sections/Weather";
 import { AIServices } from "./sections/AIServices";
 import { SystemStats } from "./sections/SystemStats";
 import { StatsProvider } from "./hooks/StatsProvider";
+import { StarryBackground } from "./components/StarryBackground";
 
 function App() {
   return (
     <StatsProvider>
-      <div className="max-w-[860px] mx-auto bg-[var(--color-bg)] p-4 transition-all duration-200 font-['Literata',serif]">
+      <StarryBackground />
+      <div className="max-w-[860px] mx-auto p-4 transition-all duration-200 font-['Literata',serif]">
         <header className="w-full mb-2 md:mb-0">
           <h1 className="text-4xl font-bold mx-auto text-center italic">
             paxboard

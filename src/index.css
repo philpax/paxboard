@@ -20,11 +20,16 @@
   --color-bg: #3c2954;
   --color-bg-secondary: #6f4c9a;
   --color-stopped: #374151;
+  --color-glass: rgba(111, 76, 154, 0.25);
+  --color-glass-hover: rgba(111, 76, 154, 0.35);
+  --color-glass-stopped: rgba(55, 65, 81, 0.4);
+  --color-glass-popover: rgba(42, 27, 61, 0.85);
+  --color-glass-inner: rgba(255, 255, 255, 0.05);
 }
 
 body {
   margin: 0;
   font-family: "Literata", serif;
-  background-color: var(--color-bg);
+  background-color: #1a0e2e;
   color: var(--color-primary);
 }

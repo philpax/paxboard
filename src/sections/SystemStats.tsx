@@ -50,7 +50,7 @@ function getProcessDisplayName(fullName: string): string {
 
 function StatCardLoading({ title }: { title: string }) {
   return (
-    <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg animate-pulse">
+    <div className="p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg animate-pulse">
       <div className="text-lg font-semibold mb-1">{title}</div>
       <div className="h-4 bg-[var(--color-bg)] rounded w-3/4 mb-2"></div>
       <div className="h-3 bg-[var(--color-bg)] rounded w-1/2"></div>
@@ -64,7 +64,7 @@ function CPUCard({ onShowDetail }: { onShowDetail: () => void }) {
   if (!stats) return <StatCardLoading title="CPU" />;
   return (
     <div
-      className="p-4 bg-[var(--color-bg-secondary)] hover:brightness-110 transition-all duration-200 shadow-lg cursor-pointer"
+      className="p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg hover:bg-[var(--color-glass-hover)] hover:brightness-110 transition-all duration-200 cursor-pointer"
       onClick={onShowDetail}
     >
       <div className="text-lg font-semibold mb-1">CPU</div>
@@ -101,7 +101,7 @@ function MemoryCard({ onShowDetail }: { onShowDetail: () => void }) {
   if (!stats) return <StatCardLoading title="Memory" />;
   return (
     <div
-      className="p-4 bg-[var(--color-bg-secondary)] hover:brightness-110 transition-all duration-200 shadow-lg cursor-pointer"
+      className="p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg hover:bg-[var(--color-glass-hover)] hover:brightness-110 transition-all duration-200 cursor-pointer"
       onClick={onShowDetail}
     >
       <div className="text-lg font-semibold mb-1">Memory</div>
@@ -132,7 +132,7 @@ function GPUCards() {
       {gpus.map((gpu, index) => (
         <div
           key={index}
-          className="p-4 bg-[var(--color-bg-secondary)] shadow-lg"
+          className="p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg"
         >
           <div className="text-lg font-semibold mb-1">
             GPU {gpus.length > 1 ? index : ""}: {gpu.name}
@@ -176,7 +176,7 @@ function DiskCards() {
   if (disks.length === 0) return null;
 
   return (
-    <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
+    <div className="p-4 bg-[rgba(111,76,154,0.25)] backdrop-blur-md border border-white/10 shadow-lg md:col-span-2">
       <div className="text-lg font-semibold mb-1">Disks</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
         {disks.map((disk) => (
@@ -201,7 +201,7 @@ function NetworkCard() {
   if (network.length === 0) return null;
 
   return (
-    <div className="p-4 bg-[var(--color-bg-secondary)] shadow-lg md:col-span-2">
+    <div className="p-4 bg-[rgba(111,76,154,0.25)] backdrop-blur-md border border-white/10 shadow-lg md:col-span-2">
       <div className="text-lg font-semibold mb-1">Network</div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1">
         {network.map((net) => (
@@ -232,7 +232,7 @@ function DetailPopover({
       onClick={onClose}
     >
       <div
-        className="bg-[var(--color-bg)] p-4 w-[600px] max-h-[80vh] overflow-auto"
+        className="bg-[var(--color-glass-popover)] backdrop-blur-xl border border-white/10 p-4 w-[600px] max-h-[80vh] overflow-auto"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center mb-4">
@@ -285,7 +285,7 @@ function CPUDetailPopover({ onClose }: { onClose: () => void }) {
             {stats.coreStats.map((core) => (
               <div
                 key={core.core}
-                className="p-2 bg-[var(--color-bg-secondary)]"
+                className="p-2 bg-[var(--color-glass-inner)]"
               >
                 <div className="flex justify-between mb-1">
                   <span className="font-semibold">Core {core.core}</span>
@@ -352,7 +352,7 @@ function MemoryDetailPopover({ onClose }: { onClose: () => void }) {
               {processes.map((proc) => (
                 <div
                   key={proc.pid}
-                  className="flex items-center gap-2 p-1 bg-[var(--color-bg-secondary)]"
+                  className="flex items-center gap-2 p-1 bg-[var(--color-glass-inner)]"
                 >
                   <div className="w-16 text-right text-[var(--color-secondary)]">
                     {proc.memoryMB.toFixed(0)} MB

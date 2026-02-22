@@ -111,7 +111,7 @@ function WeatherCard({ location }: { location: WeatherLocation }) {
 
   if (loading) {
     return (
-      <div className="bg-[var(--color-bg-secondary)] p-4 text-center">
+      <div className="bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg p-4 text-center">
         <div className="animate-pulse">
           {locationName}
           <div className="text-4xl mb-2">⏳</div>
@@ -123,7 +123,7 @@ function WeatherCard({ location }: { location: WeatherLocation }) {
 
   if (error || !weather) {
     return (
-      <div className="bg-[var(--color-stopped)] p-4 text-center">
+      <div className="bg-[var(--color-glass-stopped)] backdrop-blur-md border border-white/10 shadow-lg p-4 text-center">
         {locationName}
         <div className="text-4xl mb-2">❌</div>
         <div className="text-sm opacity-75">{error || "No data available"}</div>
@@ -137,7 +137,7 @@ function WeatherCard({ location }: { location: WeatherLocation }) {
   const windDir = getWindDirection(current.wind_direction_10m);
 
   return (
-    <div className="bg-[var(--color-bg-secondary)] p-4 hover:brightness-110 transition-all duration-200">
+    <div className="bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg hover:bg-[var(--color-glass-hover)] hover:brightness-110 p-4 transition-all duration-200">
       {locationName}
 
       <div className="flex items-center justify-between mb-2">

@@ -19,7 +19,7 @@ export function LocalServices() {
             href={service.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="block p-4 bg-[var(--color-bg-secondary)] hover:brightness-125 transition-all duration-200 transform shadow-lg"
+            className="block p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg hover:bg-[var(--color-glass-hover)] hover:brightness-110 transition-all duration-200 transform"
           >
             <div className="text-xl font-semibold">{service.name}</div>
             <div className="text-[var(--color-secondary)] text-sm">
