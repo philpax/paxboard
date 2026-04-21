@@ -66,12 +66,16 @@ export interface SystemStats {
 export interface AIResourceStatus {
   total_available: number;
   total_in_use: number;
+  usage_by_service: Record<string, number>;
 }
 
 export interface AIServiceStatus {
   name: string;
-  service_url: string;
+  listen_port: string;
   is_running: boolean;
+  active_connections: number;
+  last_used: unknown;
+  service_url: string;
   resource_requirements: Record<string, number>;
 }
 

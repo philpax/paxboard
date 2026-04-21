@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { fileURLToPath } from "url";
 import { dirname, resolve } from "path";
+import { config } from "../src/config";
 import type {
   CoreStats,
   CPUStats,
@@ -14,6 +15,7 @@ import type {
   NetworkStats,
   ProcessStats,
   StatsMessage,
+  AIServicesStatus,
 } from "../shared/types";
 
 const execAsync = promisify(exec);
@@ -124,11 +126,62 @@ function startStatsStreaming() {
   })();
 }
 
-// Fetch AI services status from large-model-proxy
-async function getAIServicesStatus() {
+// Fetch AI services status from ananke
+async function getAIServicesStatus(): Promise<AIServicesStatus | null> {
   try {
-    const response = await fetch("http://redline:7071/status");
-    return await response.json();
+    const baseUrl = config.baseUrl;
+    const [servicesResp, devicesResp] = await Promise.all([
+      fetch(`${baseUrl}:7071/api/services`),
+      fetch(`${baseUrl}:7071/api/devices`),
+    ]);
+    if (!servicesResp.ok || !devicesResp.ok) return null;
+    const services = await servicesResp.json();
+    const devices = await devicesResp.json();
+
+    // Convert bytes to GiB (float)
+    const bytesToGib = (b: number) => b / (1024 * 1024 * 1024);
+
+    // Build per-device resource info and per-service per-device requirements
+    const resources: Record<string, { total_available: number; total_in_use: number; usage_by_service: Record<string, number> }> = {};
+    const serviceRequirements: Record<string, Record<string, number>> = {};
+
+    for (const dev of devices) {
+      const totalGb = bytesToGib(dev.total_bytes);
+      const usedGb = bytesToGib(dev.total_bytes - dev.free_bytes);
+      const label = `${dev.name} (${dev.id})`;
+      const usageByService: Record<string, number> = {};
+
+      for (const res of dev.reservations) {
+        const gb = bytesToGib(res.bytes);
+        usageByService[res.service] = (usageByService[res.service] || 0) + gb;
+        serviceRequirements[res.service] = { ...serviceRequirements[res.service], [label]: gb };
+      }
+
+      resources[label] = {
+        total_available: totalGb,
+        total_in_use: usedGb,
+        usage_by_service: usageByService,
+      };
+    }
+
+    // Ensure all services have an entry in resource_requirements
+    for (const svc of services) {
+      if (!serviceRequirements[svc.name]) {
+        serviceRequirements[svc.name] = {};
+      }
+    }
+
+    const aiServices = services.map((svc: { name: string; state: string; port: number }) => ({
+      name: svc.name,
+      listen_port: String(svc.port),
+      is_running: svc.state === "running",
+      active_connections: 0,
+      last_used: null,
+      service_url: `${baseUrl}:${svc.port}`,
+      resource_requirements: serviceRequirements[svc.name],
+    }));
+
+    return { resources, services: aiServices };
   } catch {
     return null;
   }

@@ -1,8 +1,16 @@
-import { ProgressBar, ProgressBarCore } from "../components/ProgressBar";
+import { StatBar, ProgressBarCore } from "../components/ProgressBar";
 import { config } from "../config";
 import { SectionHeader } from "../components/SectionHeader";
 import { useStats } from "../hooks/StatsContext.ts";
 import type { AIResourceStatus, AIServiceStatus } from "../../shared/types";
+
+// =============================================================================
+// Helpers
+// =============================================================================
+
+function round1(n: number): string {
+  return (Math.round(n * 10) / 10).toFixed(1);
+}
 
 // =============================================================================
 // Exported Component
@@ -10,7 +18,7 @@ import type { AIResourceStatus, AIServiceStatus } from "../../shared/types";
 
 export function AIServices() {
   const { aiServices: proxyStatus } = useStats();
-  const lmpServiceUrl = `${config.baseUrl}:7071`;
+  const anankeServiceUrl = `${config.baseUrl}:7071`;
 
   if (!proxyStatus) {
     return (
@@ -31,27 +39,32 @@ export function AIServices() {
     <section>
       <SectionHeader title="ai services" />
       <div>
-        {/* Main LMP tile */}
+        {/* Main ananke tile */}
         <a
-          href={lmpServiceUrl}
+          href={anankeServiceUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="block p-4 bg-[var(--color-glass)] backdrop-blur-md border border-white/10 shadow-lg hover:bg-[var(--color-glass-hover)] hover:brightness-110 transition-all duration-200 transform mb-2"
         >
-          <div className="text-xl font-semibold">large-model-proxy</div>
+          <div className="text-xl font-semibold">ananke</div>
           <div className="text-[var(--color-secondary)] text-sm mb-2">
-            {lmpServiceUrl}
+            {anankeServiceUrl}
           </div>
           <div className="text-sm">
             <div className="italic mb-1">Total Resources:</div>
-            {resourceEntries.map(([resource, status]) => (
-              <ProgressBar
-                key={resource}
-                current={status.total_in_use}
-                total={status.total_available}
-                label={resource}
-              />
-            ))}
+            {resourceEntries.map(([resource, status]) => {
+              const percentage = status.total_available > 0
+                ? (status.total_in_use / status.total_available) * 100
+                : 0;
+              return (
+                <StatBar
+                  key={resource}
+                  label={resource}
+                  value={`${round1(status.total_in_use)} / ${round1(status.total_available)} GB`}
+                  percentage={percentage}
+                />
+              );
+            })}
           </div>
         </a>
 
@@ -111,7 +124,7 @@ function ServiceTile({
               <div className="flex justify-between mb-1">
                 <span>{resource}</span>
                 <span>
-                  {required}/{total}
+                  {round1(required)}/{round1(total)} GB
                 </span>
               </div>
               {service.is_running && (
