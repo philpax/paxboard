@@ -53,9 +53,10 @@ export function AIServices() {
           <div className="text-sm">
             <div className="italic mb-1">Total Resources:</div>
             {resourceEntries.map(([resource, status]) => {
-              const percentage = status.total_available > 0
-                ? (status.total_in_use / status.total_available) * 100
-                : 0;
+              const percentage =
+                status.total_available > 0
+                  ? (status.total_in_use / status.total_available) * 100
+                  : 0;
               return (
                 <StatBar
                   key={resource}
